@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "lark": {
+      "command": "node",
+      "args": ["./dist/index.cjs"],
+      "env": {
+        "LARK_APP_ID": "cli_xxxxxxxxxxxxxxxx",
+        "LARK_APP_SECRET": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "LARK_DOMAIN": "https://open.feishu.cn",
+        "LARK_ALLOWED_SENDERS": "",
+        "LARK_GROUP_CHAT_ENABLED": "false",
+        "LARK_IMAGE_DOWNLOAD": "true"
+      }
+    }
+  }
+}
