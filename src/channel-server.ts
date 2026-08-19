@@ -4,9 +4,20 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import type { InboundMessage } from './lark-bridge.js';
+import { z } from 'zod';
+import type { InboundMessage, LarkBridge } from './lark-bridge.js';
 
 const SOURCE = 'lark';
+
+const PermissionRequestSchema = z.object({
+  method: z.literal('notifications/claude/channel/permission_request'),
+  params: z.object({
+    request_id: z.string(),
+    tool_name: z.string(),
+    description: z.string(),
+    input_preview: z.string(),
+  }),
+});
 
 /**
  * Wraps a LarkBridge as a bidirectional CodeBuddy channel MCP server.
@@ -22,17 +33,25 @@ export class ChannelServer {
   private readonly mcp: Server;
   /** Map chat_id -> last message id, used to thread replies if desired. */
   private readonly lastMessageByChat = new Map<string, string>();
+  /** Only chats with an authenticated inbound message are valid reply targets. */
+  private readonly trustedChats = new Set<string>();
+  private lastActiveChatId: string | undefined;
   private bridge: LarkBridge | undefined;
 
-  constructor(private readonly log: (line: string) => void = () => {}) {
+  constructor(
+    private readonly log: (line: string) => void = () => {},
+    permissionRelayEnabled = false,
+  ) {
+    const experimental: Record<string, object> = { 'claude/channel': {} };
+    // Permission relay is only safe when inbound users are authenticated by an
+    // explicit sender allowlist. Do not advertise it in allow-all mode.
+    if (permissionRelayEnabled) experimental['claude/channel/permission'] = {};
+
     this.mcp = new Server(
-      { name: 'codebuddy-lark-channel', version: '0.1.0' },
+      { name: 'codebuddy-lark-channel', version: '0.2.0' },
       {
         capabilities: {
-          experimental: {
-            'claude/channel': {},
-            'claude/channel/permission': {},
-          },
+          experimental,
           tools: {},
         },
         instructions: [
@@ -47,6 +66,30 @@ export class ChannelServer {
     );
 
     this.registerTools();
+    if (permissionRelayEnabled) this.registerPermissionRelay();
+  }
+
+  private registerPermissionRelay(): void {
+    this.mcp.setNotificationHandler(PermissionRequestSchema, async ({ params }) => {
+      if (!this.bridge) throw new Error('bridge not connected');
+      if (!this.lastActiveChatId) {
+        this.log(`cannot relay permission ${params.request_id}: no trusted Lark chat is active`);
+        return;
+      }
+
+      const prompt = [
+        `CodeBuddy 请求执行 ${params.tool_name}`,
+        params.description,
+        params.input_preview,
+        '',
+        `回复 \"yes ${params.request_id}\" 允许，或 \"no ${params.request_id}\" 拒绝。`,
+      ]
+        .filter((line) => line !== '')
+        .join('\n');
+
+      await this.bridge.sendText({ chatId: this.lastActiveChatId, text: prompt });
+      this.log(`permission request relayed: ${params.request_id}`);
+    });
   }
 
   private registerTools(): void {
@@ -92,6 +135,9 @@ export class ChannelServer {
       if (!chatId || !text) {
         throw new Error('chat_id and text are required');
       }
+      if (!this.trustedChats.has(chatId)) {
+        throw new Error('Refusing to send to an unknown chat_id');
+      }
 
       if (!this.bridge) throw new Error('bridge not connected');
       const inThread = Boolean(args.in_thread);
@@ -110,7 +156,9 @@ export class ChannelServer {
 
   /** Push an inbound Lark message into the CodeBuddy session. */
   async pushMessage(msg: InboundMessage): Promise<void> {
+    this.trustedChats.add(msg.chatId);
     this.lastMessageByChat.set(msg.chatId, msg.messageId);
+    this.lastActiveChatId = msg.chatId;
 
     const meta: Record<string, string> = {
       sender: msg.senderId,

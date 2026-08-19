@@ -26,8 +26,22 @@ export interface OutboundMessage {
   text: string;
 }
 
+interface MessageReceiveEvent {
+  sender?: { sender_id?: { open_id?: string } };
+  message?: {
+    chat_id?: string;
+    chat_type?: string;
+    message_id?: string;
+    message_type?: string;
+    content?: string;
+    mentions?: Array<{ key?: string; name?: string }>;
+  };
+}
+
 /** Permission reply shape: "y|yes|n|no <5-char id>" */
 const PERMISSION_REPLY_RE = /^\s*(y|yes|n|no)\s+([a-km-z]{5})\s*$/i;
+const MAX_LARK_TEXT_CHARS = 20_000;
+const MAX_SEEN_MESSAGE_IDS = 2_000;
 
 function safeStringify(value: unknown): string {
   try {
@@ -50,6 +64,7 @@ export class LarkBridge {
   private readonly client: lark.Client;
   private readonly wsClient: lark.WSClient;
   private readonly mediaDirAbs: string;
+  private readonly seenMessageIds = new Set<string>();
   private readonly stderrLogger: {
     debug: (...args: unknown[]) => void;
     info: (...args: unknown[]) => void;
@@ -62,8 +77,8 @@ export class LarkBridge {
   constructor(
     private readonly config: Config,
     private readonly handlers: {
-      onMessage: (msg: InboundMessage) => void;
-      onPermission?: (decision: PermissionDecision) => void;
+      onMessage: (msg: InboundMessage) => void | Promise<void>;
+      onPermission?: (decision: PermissionDecision) => void | Promise<void>;
       log?: (line: string) => void;
     },
   ) {
@@ -84,9 +99,7 @@ export class LarkBridge {
       domain: config.domain,
       loggerLevel: lark.LoggerLevel.warn,
       logger: this.stderrLogger,
-      // Long-lived client; SDK handles token refresh.
-      disableAutoToken: false,
-    } as lark.ClientParams);
+    });
 
     this.wsClient = new lark.WSClient({
       appId: config.appId,
@@ -142,7 +155,7 @@ export class LarkBridge {
   }
 
   private async handleReceiveEvent(
-    data: lark.EventImMessageReceiveV1,
+    data: MessageReceiveEvent,
   ): Promise<void> {
     const senderId = data.sender?.sender_id?.open_id || '';
     const chatId = data.message?.chat_id || '';
@@ -150,7 +163,22 @@ export class LarkBridge {
     const messageId = data.message?.message_id || '';
     const messageType = data.message?.message_type || 'text';
 
-    if (!senderId) return;
+    if (!senderId || !chatId || !messageId) {
+      this.log('dropping malformed message event (missing sender/chat/message id)');
+      return;
+    }
+
+    // Lark retries events when acknowledgements are delayed. Avoid injecting
+    // the same prompt twice while keeping the cache bounded for long runtimes.
+    if (this.seenMessageIds.has(messageId)) {
+      this.log(`dropping duplicate message ${messageId}`);
+      return;
+    }
+    this.seenMessageIds.add(messageId);
+    if (this.seenMessageIds.size > MAX_SEEN_MESSAGE_IDS) {
+      const oldest = this.seenMessageIds.values().next().value as string | undefined;
+      if (oldest) this.seenMessageIds.delete(oldest);
+    }
 
     // Permission decision replies are allowed even for non-allowlisted? No —
     // only allowlisted trusted users may decide permissions.
@@ -170,6 +198,7 @@ export class LarkBridge {
 
     if (messageType === 'text') {
       text = this.extractText(data.message?.content);
+      text = this.removeBotMentions(text, data.message?.mentions);
     } else if (messageType === 'post') {
       text = this.extractPostText(data.message?.content);
     } else if (messageType === 'image' && this.config.imageDownloadEnabled) {
@@ -190,7 +219,7 @@ export class LarkBridge {
     // Intercept permission decisions: "yes abcde" / "no abcde".
     const permMatch = PERMISSION_REPLY_RE.exec(text);
     if (permMatch && this.handlers.onPermission) {
-      this.handlers.onPermission({
+      await this.handlers.onPermission({
         requestId: permMatch[2].toLowerCase(),
         behavior: permMatch[1].toLowerCase().startsWith('y') ? 'allow' : 'deny',
       });
@@ -198,7 +227,7 @@ export class LarkBridge {
       return;
     }
 
-    this.handlers.onMessage({
+    await this.handlers.onMessage({
       senderId,
       chatId,
       chatType,
@@ -207,6 +236,17 @@ export class LarkBridge {
       messageType,
       attachmentPath,
     });
+  }
+
+  private removeBotMentions(
+    text: string,
+    mentions: Array<{ key?: string; name?: string }> | undefined,
+  ): string {
+    let result = text;
+    for (const mention of mentions || []) {
+      if (mention.key) result = result.split(mention.key).join('');
+    }
+    return result.trim();
   }
 
   private extractText(contentJson: string | undefined): string {
@@ -257,21 +297,18 @@ export class LarkBridge {
 
   private async downloadImage(imageKey: string, messageId: string): Promise<string | undefined> {
     try {
-      const resp = await this.client.im.imageResource.get({
-        path: { image_key: imageKey },
-        params: { type: 'message' },
+      const resp = await this.client.im.messageResource.get({
+        path: { message_id: messageId, file_key: imageKey },
+        params: { type: 'image' },
       });
-      // SDK returns a readable stream in resp for binary downloads.
-      const stream = (resp as unknown as { data?: NodeJS.ReadableStream })?.data || resp;
+      const stream = resp.getReadableStream();
       const ext = '.png';
       const safeId = messageId.replace(/[^a-zA-Z0-9_-]/g, '_') || imageKey.slice(0, 8);
       const filename = `${Date.now()}-${safeId}${ext}`;
       const outPath = resolve(this.mediaDirAbs, filename);
       await new Promise<void>((resolve, reject) => {
         const ws = createWriteStream(outPath);
-        // @ts-expect-error - SDK returns a request-like/stream object.
         stream.pipe(ws);
-        // @ts-expect-error
         stream.on('error', reject);
         ws.on('finish', resolve);
         ws.on('error', reject);
@@ -286,15 +323,28 @@ export class LarkBridge {
   /** Send a text reply to a chat. Called by CodeBuddy via the MCP `reply` tool. */
   async sendText({ chatId, text }: OutboundMessage): Promise<void> {
     if (!chatId) throw new Error('chatId is required');
-    await this.client.im.message.create({
-      params: { receive_id_type: 'chat_id' },
-      data: {
-        receive_id: chatId,
-        msg_type: 'text',
-        content: JSON.stringify({ text }),
-      },
-    });
+    if (!text) throw new Error('text is required');
+    const chunks = this.splitText(text, MAX_LARK_TEXT_CHARS);
+    for (const chunk of chunks) {
+      await this.client.im.message.create({
+        params: { receive_id_type: 'chat_id' },
+        data: {
+          receive_id: chatId,
+          msg_type: 'text',
+          content: JSON.stringify({ text: chunk }),
+        },
+      });
+    }
     this.log(`sent reply to ${chatId} (${text.length} chars)`);
+  }
+
+  private splitText(text: string, maxChars: number): string[] {
+    const chars = Array.from(text);
+    const chunks: string[] = [];
+    for (let start = 0; start < chars.length; start += maxChars) {
+      chunks.push(chars.slice(start, start + maxChars).join(''));
+    }
+    return chunks;
   }
 
   /** Reply in-thread to the original message (optional, nicer UX in groups). */

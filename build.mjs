@@ -11,7 +11,7 @@ await build({
   target: 'node18',
   format: 'cjs',
   outfile: 'dist/index.cjs',
-  sourcemap: true,
+  sourcemap: false,
   // Note: src/index.ts already has a shebang; do not add a banner here.
   // The Lark SDK ships some large vendored bundles; keep them external to avoid
   // dynamic-require warnings. Everything else is bundled.

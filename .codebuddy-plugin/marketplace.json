@@ -1,0 +1,17 @@
+{
+  "name": "codebuddy-lark-plugins",
+  "owner": {
+    "name": "codebuddy-lark-plugin contributors"
+  },
+  "plugins": [
+    {
+      "name": "codebuddy-lark-channel",
+      "source": "./",
+      "description": "Connect a Feishu/Lark bot to a running CodeBuddy Code session.",
+      "version": "0.2.0",
+      "license": "MIT",
+      "keywords": ["lark", "feishu", "bot", "channel"],
+      "category": "Productivity"
+    }
+  ]
+}

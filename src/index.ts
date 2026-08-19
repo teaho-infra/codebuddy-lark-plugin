@@ -21,7 +21,9 @@ async function main(): Promise<void> {
     log('WARNING: no LARK_ALLOWED_SENDERS configured. No messages will be forwarded until you add senders.');
   }
 
-  const channel = new ChannelServer(log);
+  const permissionRelayEnabled =
+    config.allowedSenders.length > 0 && !config.allowAllSenders;
+  const channel = new ChannelServer(log, permissionRelayEnabled);
 
   const bridge = new LarkBridge(config, {
     onMessage: async (msg) => {
@@ -54,11 +56,17 @@ async function main(): Promise<void> {
 }
 
 async function loadDotenv(): Promise<void> {
-  if (process.env.LARK_APP_ID) return; // already configured via environment
   try {
     const { readFile } = await import('node:fs/promises');
-    // Search cwd and its parent (covers running from dist/ or project root).
-    const candidates = ['.env', '../.env'];
+    const { dirname, resolve } = await import('node:path');
+    // CodeBuddy starts MCP servers with the workspace as cwd. Also search next
+    // to the bundle so a local plugin can reliably use its own ignored .env.
+    const moduleDir = dirname(resolve(process.argv[1] || '.'));
+    const candidates = [
+      resolve(process.cwd(), '.env'),
+      resolve(process.cwd(), '../.env'),
+      resolve(moduleDir, '../.env'),
+    ];
     for (const path of candidates) {
       let raw: string;
       try {
@@ -79,6 +87,9 @@ async function loadDotenv(): Promise<void> {
         ) {
           value = value.slice(1, -1);
         }
+        // Process-level configuration always wins. Fill only missing values so
+        // an App ID supplied by CodeBuddy does not prevent loading a missing
+        // secret (or optional settings) from .env during local development.
         if (!(key in process.env)) process.env[key] = value;
       }
       break;

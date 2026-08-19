@@ -30,6 +30,8 @@ It is a bidirectional MCP server (over stdio) implementing the CodeBuddy channel
    - `im:message.group_at_msg` (read group @ messages, if using groups)
    - `im:message.p2p_msg` (read direct messages)
    - `im:resource` (download images, optional)
+   These are **bot/application scopes**. Do not run a user OAuth login for this
+   plugin; grant the scopes to the app in the developer console.
 5. Publish/release the app version and enable the bot.
 6. Note the **App ID** and **App Secret**.
 
@@ -59,9 +61,67 @@ Copy that `ou_...` into `LARK_ALLOWED_SENDERS` (comma-separated for multiple use
 
 ## Configure CodeBuddy Code
 
-You can load it either as an **MCP server** (simplest for local dev) or package it as a plugin.
+The repository is a native CodeBuddy plugin. Installed copies collect settings
+through top-level `userConfig`; the App Secret is marked sensitive and is stored
+in the system keychain (or CodeBuddy's credentials fallback), not in the plugin
+files. Local development can still read the ignored `.env` beside the bundle.
 
-### Option A — MCP server in `~/.codebuddy/.mcp.json`
+For local development, validate and load the plugin directory:
+
+```bash
+codebuddy plugin validate .
+codebuddy --plugin-dir . --dangerously-load-development-channels plugin:codebuddy-lark-channel
+```
+
+The checked-in bundle at `dist/index.cjs` means users do not need to install Node
+dependencies after the plugin has been packaged. Inline development plugins use
+`.env`; marketplace installations prompt for configuration when enabled.
+
+## Package and publish
+
+Build a credential-free release archive:
+
+```bash
+npm ci
+npm run package:plugin
+tar -tzf release/codebuddy-lark-plugin.tgz
+```
+
+The archive is written to `release/codebuddy-lark-plugin.tgz`. It excludes
+`.env`, `.git`, `node_modules`, local media, source maps, and the release folder.
+
+For team/community distribution, push this repository to GitHub or another Git
+host. The repository includes `.codebuddy-plugin/marketplace.json`, so users can
+install it as a marketplace:
+
+```bash
+codebuddy plugin marketplace add OWNER/REPOSITORY
+codebuddy plugin install codebuddy-lark-channel@codebuddy-lark-plugins
+```
+
+For a local publication test:
+
+```bash
+codebuddy plugin marketplace add /absolute/path/to/codebuddy-lark-plugin
+codebuddy plugin install codebuddy-lark-channel@codebuddy-lark-plugins --scope local
+```
+
+After installation, CodeBuddy prompts for:
+
+- `app_id`
+- `app_secret` (sensitive)
+- `allowed_senders`
+- `domain`
+- `group_chat_enabled`
+- `image_download`
+
+The runtime receives these as `CODEBUDDY_PLUGIN_OPTION_*` environment variables.
+Explicit `LARK_*` variables and local `.env` values take precedence, which keeps
+development and installed-plugin workflows compatible.
+
+You can alternatively load the channel directly as an MCP server.
+
+### Direct MCP server in `~/.codebuddy/.mcp.json`
 
 Add:
 
@@ -91,7 +151,7 @@ codebuddy --dangerously-load-development-channels server:lark
 
 > `--dangerously-load-development-channels` bypasses the channel allowlist for local development. Once this plugin is published to a marketplace it can be loaded with `--channels plugin:lark@<marketplace>`.
 
-### Option B — development without rebuild (tsx)
+### Development without rebuild (tsx)
 
 For iterating on the source, point the command at `tsx`:
 
@@ -196,6 +256,8 @@ npm start         # run the built bundle
 
 - Always set `LARK_ALLOWED_SENDERS`. An open channel is a prompt-injection vector: anyone who can message the bot can instruct CodeBuddy (which can run commands on your machine).
 - The allowlist checks the **sender** (`open_id`), not the chat — so in groups, only listed individuals are forwarded.
+- Outbound replies are restricted to chats that have already produced an authenticated inbound message.
+- Duplicate event deliveries are ignored by `message_id`.
 - Only pair trusted users: paired users can also approve/deny tool calls via permission relay.
 
 ## License

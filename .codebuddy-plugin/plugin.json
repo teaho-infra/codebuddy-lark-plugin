@@ -1,0 +1,47 @@
+{
+  "name": "codebuddy-lark-channel",
+  "version": "0.2.0",
+  "description": "Connect a Feishu/Lark bot to a running CodeBuddy Code session.",
+  "license": "MIT",
+  "keywords": ["lark", "feishu", "bot", "channel"],
+  "userConfig": {
+    "app_id": {
+      "description": "Feishu/Lark self-built app ID (cli_...)",
+      "sensitive": false
+    },
+    "app_secret": {
+      "description": "Feishu/Lark app secret",
+      "sensitive": true
+    },
+    "allowed_senders": {
+      "description": "Comma-separated trusted sender open_id values (ou_...)",
+      "sensitive": false
+    },
+    "domain": {
+      "description": "API domain: https://open.feishu.cn or https://open.larksuite.com",
+      "sensitive": false
+    },
+    "group_chat_enabled": {
+      "description": "Whether to accept group messages: true or false",
+      "sensitive": false
+    },
+    "image_download": {
+      "description": "Whether to download message images: true or false",
+      "sensitive": false
+    }
+  },
+  "mcpServers": {
+    "lark": {
+      "command": "node",
+      "args": ["${CODEBUDDY_PLUGIN_ROOT}/dist/index.cjs"],
+      "env": {
+        "LARK_MEDIA_DIR": "${CODEBUDDY_PLUGIN_DATA}/media"
+      }
+    }
+  },
+  "channels": [
+    {
+      "server": "lark"
+    }
+  ]
+}

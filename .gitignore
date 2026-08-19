@@ -1,5 +1,7 @@
 node_modules/
-dist/
 .env
+.lark-media/
+dist/*.map
+release/
 *.log
 .DS_Store

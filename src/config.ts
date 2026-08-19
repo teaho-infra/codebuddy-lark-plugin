@@ -35,8 +35,18 @@ function bool(value: string | undefined, defaultValue = false): boolean {
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
-  const appId = env.LARK_APP_ID || env.FEISHU_APP_ID || '';
-  const appSecret = env.LARK_APP_SECRET || env.FEISHU_APP_SECRET || '';
+  // Installed plugins receive userConfig as CODEBUDDY_PLUGIN_OPTION_*.
+  // Explicit LARK_*/FEISHU_* variables take precedence for local development.
+  const appId =
+    env.LARK_APP_ID ||
+    env.FEISHU_APP_ID ||
+    env.CODEBUDDY_PLUGIN_OPTION_APP_ID ||
+    '';
+  const appSecret =
+    env.LARK_APP_SECRET ||
+    env.FEISHU_APP_SECRET ||
+    env.CODEBUDDY_PLUGIN_OPTION_APP_SECRET ||
+    '';
 
   if (!appId || !appSecret) {
     throw new Error(
@@ -47,11 +57,25 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   return {
     appId,
     appSecret,
-    domain: env.LARK_DOMAIN || 'https://open.feishu.cn',
-    allowedSenders: parseList(env.LARK_ALLOWED_SENDERS || env.LARK_ALLOWED_USERS),
+    domain:
+      env.LARK_DOMAIN ||
+      env.CODEBUDDY_PLUGIN_OPTION_DOMAIN ||
+      'https://open.feishu.cn',
+    allowedSenders: parseList(
+      env.LARK_ALLOWED_SENDERS ||
+        env.LARK_ALLOWED_USERS ||
+        env.CODEBUDDY_PLUGIN_OPTION_ALLOWED_SENDERS,
+    ),
     allowAllSenders: bool(env.LARK_ALLOW_ALL, false),
-    groupChatEnabled: bool(env.LARK_GROUP_CHAT_ENABLED, false),
-    imageDownloadEnabled: bool(env.LARK_IMAGE_DOWNLOAD, true),
+    groupChatEnabled: bool(
+      env.LARK_GROUP_CHAT_ENABLED ||
+        env.CODEBUDDY_PLUGIN_OPTION_GROUP_CHAT_ENABLED,
+      false,
+    ),
+    imageDownloadEnabled: bool(
+      env.LARK_IMAGE_DOWNLOAD || env.CODEBUDDY_PLUGIN_OPTION_IMAGE_DOWNLOAD,
+      true,
+    ),
     mediaDir: env.LARK_MEDIA_DIR || './.lark-media',
   };
 }
