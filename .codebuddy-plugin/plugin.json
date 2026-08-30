@@ -28,6 +28,10 @@
     "image_download": {
       "description": "Whether to download message images: true or false",
       "sensitive": false
+    },
+    "allow_all": {
+      "description": "Accept messages from anyone (true/false). DANGEROUS: prompt-injection risk, testing only",
+      "sensitive": false
     }
   },
   "mcpServers": {

@@ -132030,7 +132030,10 @@ function loadConfig(env = process.env) {
     allowedSenders: parseList(
       env.LARK_ALLOWED_SENDERS || env.LARK_ALLOWED_USERS || env.CODEBUDDY_PLUGIN_OPTION_ALLOWED_SENDERS
     ),
-    allowAllSenders: bool(env.LARK_ALLOW_ALL, false),
+    allowAllSenders: bool(
+      env.LARK_ALLOW_ALL || env.CODEBUDDY_PLUGIN_OPTION_ALLOW_ALL,
+      false
+    ),
     groupChatEnabled: bool(
       env.LARK_GROUP_CHAT_ENABLED || env.CODEBUDDY_PLUGIN_OPTION_GROUP_CHAT_ENABLED,
       false

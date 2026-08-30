@@ -61,10 +61,66 @@ Copy that `ou_...` into `LARK_ALLOWED_SENDERS` (comma-separated for multiple use
 
 ## Configure CodeBuddy Code
 
-The repository is a native CodeBuddy plugin. Installed copies collect settings
-through top-level `userConfig`; the App Secret is marked sensitive and is stored
-in the system keychain (or CodeBuddy's credentials fallback), not in the plugin
-files. Local development can still read the ignored `.env` beside the bundle.
+The repository is a native CodeBuddy plugin. Settings are declared through
+top-level `userConfig`; the App Secret is marked sensitive and is stored outside
+the plugin files. Local development can still read the ignored `.env` beside the
+bundle.
+
+### Where configuration lives
+
+CodeBuddy does **not** prompt for `userConfig` values when a plugin is installed
+or enabled (verified against 2.142.0: the write path `savePluginOptions()` is
+never called). Values have to be written manually — run `/lark-setup` and let
+CodeBuddy ask for them and store them for you, or write them yourself:
+
+| Kind | File | Location |
+| --- | --- | --- |
+| non-sensitive | `~/.codebuddy/settings.json` | `pluginConfigs["<plugin-id>"].options` |
+| sensitive (`app_secret`) | `~/.codebuddy/.credentials.json` | `pluginSecrets["<plugin-id>"]` |
+
+`<plugin-id>` is `<plugin name>@<marketplace name>`, e.g.
+`codebuddy-lark-channel@codebuddy-lark-plugins`. CodeBuddy exports every stored
+option to the MCP server process as `CODEBUDDY_PLUGIN_OPTION_<KEY>`, which is
+what the runtime reads.
+
+```jsonc
+// ~/.codebuddy/settings.json
+{
+  "pluginConfigs": {
+    "codebuddy-lark-channel@codebuddy-lark-plugins": {
+      "options": {
+        "app_id": "cli_xxxxxxxxxxxxxxxx",
+        "allowed_senders": "ou_xxxxxxxxxxxxxxxx",
+        "domain": "https://open.feishu.cn",
+        "group_chat_enabled": "false",
+        "image_download": "true",
+        "allow_all": "false"
+      }
+    }
+  }
+}
+```
+
+```jsonc
+// ~/.codebuddy/.credentials.json   (chmod 600)
+{
+  "pluginSecrets": {
+    "codebuddy-lark-channel@codebuddy-lark-plugins": {
+      "app_secret": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    }
+  }
+}
+```
+
+Options are read when the plugin loads, so restart CodeBuddy (or run
+`/reload-plugins`) afterwards.
+
+> `~/.codebuddy/.env` does **not** work for the plugin's MCP server: stdio MCP
+> servers only inherit `HOME`/`PATH`/`SHELL`/`TERM`/`USER`/`LOGNAME` plus the
+> `env` block declared in the plugin manifest. `LARK_*` variables only reach the
+> runtime when they are set in `plugin.json`'s `mcpServers.lark.env`, in a
+> `.mcp.json` server entry, or in the `.env` next to the bundle (local
+> development).
 
 For local development, validate and load the plugin directory:
 
@@ -75,7 +131,7 @@ codebuddy --plugin-dir . --dangerously-load-development-channels plugin:codebudd
 
 The checked-in bundle at `dist/index.cjs` means users do not need to install Node
 dependencies after the plugin has been packaged. Inline development plugins use
-`.env`; marketplace installations prompt for configuration when enabled.
+`.env`; installed plugins read the stored options described above.
 
 ## Package and publish
 
@@ -106,7 +162,9 @@ codebuddy plugin marketplace add /absolute/path/to/codebuddy-lark-plugin
 codebuddy plugin install codebuddy-lark-channel@codebuddy-lark-plugins --scope local
 ```
 
-After installation, CodeBuddy prompts for:
+After installation, run `/lark-setup` (provided by this plugin as
+`codebuddy-lark-channel:lark-setup`). It asks for the values below and writes
+them to the correct files:
 
 - `app_id`
 - `app_secret` (sensitive)
@@ -114,6 +172,7 @@ After installation, CodeBuddy prompts for:
 - `domain`
 - `group_chat_enabled`
 - `image_download`
+- `allow_all`
 
 The runtime receives these as `CODEBUDDY_PLUGIN_OPTION_*` environment variables.
 Explicit `LARK_*` variables and local `.env` values take precedence, which keeps

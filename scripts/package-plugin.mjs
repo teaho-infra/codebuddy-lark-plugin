@@ -24,6 +24,7 @@ const args = [
   '-C',
   root,
   '.codebuddy-plugin',
+  'commands',
   'dist/index.cjs',
   'README.md',
   'LICENSE',
