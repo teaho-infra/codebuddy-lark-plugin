@@ -91,10 +91,35 @@ Read `~/.codebuddy/credentials.json` (create it with `{}` if missing) and merge:
 }
 ```
 
-Preserve existing content — this file is shared with OAuth tokens. Then run
+Preserve existing content — this file may be shared with OAuth tokens. Then run
 `chmod 600 ~/.codebuddy/credentials.json`.
 
-## 5. Finish
+**Path warning:** the target is `~/.codebuddy/credentials.json` (no leading dot
+in the filename). `~/.codebuddy/.credentials.json` is a different file used for
+OAuth tokens; CodeBuddy's plugin option loader ignores it. If an older setup
+put `pluginSecrets` there, migrate those entries to `credentials.json`.
+
+## 5. Verify
+
+Before telling the user anything, run this check and require it to pass:
+
+```bash
+node -e '
+const fs=require("fs"),os=require("os"),path=require("path");
+const id=process.argv[1];
+const opt=JSON.parse(fs.readFileSync(path.join(os.homedir(),".codebuddy/settings.json"),"utf8")).pluginConfigs?.[id]?.options??{};
+const credPath=path.join(os.homedir(),".codebuddy/credentials.json");
+const sec=fs.existsSync(credPath)?(JSON.parse(fs.readFileSync(credPath,"utf8")).pluginSecrets?.[id]??{}):{};
+const merged={...sec,...opt};
+const missing=["app_id","app_secret"].filter(k=>!merged[k]);
+console.log(missing.length?("MISSING: "+missing.join(", ")):"OK "+JSON.stringify(Object.keys(merged)));
+' "<plugin-id>"
+```
+
+If it prints `MISSING: app_secret`, you wrote the secret to the wrong file —
+fix it per step 4. Do not claim success until it prints `OK`.
+
+## 6. Finish
 
 Tell the user:
 

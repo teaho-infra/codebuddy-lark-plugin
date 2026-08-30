@@ -1,6 +1,6 @@
 {
   "name": "codebuddy-lark-channel",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Connect a Feishu/Lark bot to a running CodeBuddy Code session.",
   "license": "MIT",
   "keywords": ["lark", "feishu", "bot", "channel"],
