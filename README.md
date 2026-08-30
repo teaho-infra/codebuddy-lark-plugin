@@ -76,7 +76,7 @@ CodeBuddy ask for them and store them for you, or write them yourself:
 | Kind | File | Location |
 | --- | --- | --- |
 | non-sensitive | `~/.codebuddy/settings.json` | `pluginConfigs["<plugin-id>"].options` |
-| sensitive (`app_secret`) | `~/.codebuddy/.credentials.json` | `pluginSecrets["<plugin-id>"]` |
+| sensitive (`app_secret`) | `~/.codebuddy/credentials.json` | `pluginSecrets["<plugin-id>"]` |
 
 `<plugin-id>` is `<plugin name>@<marketplace name>`, e.g.
 `codebuddy-lark-channel@codebuddy-lark-plugins`. CodeBuddy exports every stored
@@ -102,7 +102,7 @@ what the runtime reads.
 ```
 
 ```jsonc
-// ~/.codebuddy/.credentials.json   (chmod 600)
+// ~/.codebuddy/credentials.json   (chmod 600)
 {
   "pluginSecrets": {
     "codebuddy-lark-channel@codebuddy-lark-plugins": {

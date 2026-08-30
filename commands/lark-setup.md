@@ -12,7 +12,7 @@ Credentials must be written to the two files CodeBuddy actually reads:
 
 - non-sensitive options → `~/.codebuddy/settings.json` under
   `pluginConfigs["<plugin-id>"].options`
-- sensitive options → `~/.codebuddy/.credentials.json` under
+- sensitive options → `~/.codebuddy/credentials.json` under
   `pluginSecrets["<plugin-id>"]`
 
 CodeBuddy exports every stored option to the MCP server process as
@@ -79,7 +79,7 @@ Preserve every other top-level key and every other entry inside
 
 ## 4. Write the sensitive option
 
-Read `~/.codebuddy/.credentials.json` (create it with `{}` if missing) and merge:
+Read `~/.codebuddy/credentials.json` (create it with `{}` if missing) and merge:
 
 ```json
 {
@@ -92,7 +92,7 @@ Read `~/.codebuddy/.credentials.json` (create it with `{}` if missing) and merge
 ```
 
 Preserve existing content — this file is shared with OAuth tokens. Then run
-`chmod 600 ~/.codebuddy/.credentials.json`.
+`chmod 600 ~/.codebuddy/credentials.json`.
 
 ## 5. Finish
 
