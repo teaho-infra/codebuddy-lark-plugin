@@ -150374,21 +150374,30 @@ async function main() {
 }
 async function loadDotenv() {
   try {
-    const { readFile } = await import("node:fs/promises");
+    const { readFile, stat } = await import("node:fs/promises");
     const { dirname, resolve: resolve2 } = await import("node:path");
+    const { homedir } = await import("node:os");
     const moduleDir = dirname(resolve2(process.argv[1] || "."));
+    const home = homedir();
     const candidates = [
       resolve2(process.cwd(), ".env"),
       resolve2(process.cwd(), "../.env"),
-      resolve2(moduleDir, "../.env")
+      resolve2(moduleDir, "../.env"),
+      // CodeBuddy main config dir (where credentials.json lives).
+      resolve2(home, ".codebuddy", ".env"),
+      // CodeBuddy-managed plugin data dir for this plugin (survives reinstalls).
+      resolve2(home, ".codebuddy", "plugins", "data", "codebuddy-lark-channel", ".env")
     ];
     for (const path of candidates) {
       let raw;
       try {
+        const s = await stat(path);
+        if (!s.isFile()) continue;
         raw = await readFile(path, "utf8");
       } catch {
         continue;
       }
+      let loaded = 0;
       for (const line of raw.split(/\r?\n/)) {
         const trimmed = line.trim();
         if (!trimmed || trimmed.startsWith("#")) continue;
@@ -150399,11 +150408,17 @@ async function loadDotenv() {
         if (value.startsWith('"') && value.endsWith('"') || value.startsWith("'") && value.endsWith("'")) {
           value = value.slice(1, -1);
         }
-        if (!(key in process.env)) process.env[key] = value;
+        if (!(key in process.env)) {
+          process.env[key] = value;
+          loaded += 1;
+        }
       }
-      break;
+      log(`loaded ${loaded} var(s) from ${path}`);
+      return path;
     }
+    return null;
   } catch {
+    return null;
   }
 }
 main().catch((err) => {

@@ -18,5 +18,15 @@ await build({
   external: [
     // keep native/optional deps external if any appear
   ],
+  // Redirect every import of the bare `https-proxy-agent` specifier to the
+  // factory entry point (`dist/index.js`). This guarantees only the factory
+  // function is bundled into the axios WSClient call site, sidestepping an
+  // upstream esbuild quirk where a same-package bare import can resolve to
+  // the ES6 class file (`dist/agent.js`), which axios then calls without
+  // `new` and throws at runtime. Mirrors what scripts/patch-dist.mjs does as
+  // a post-build safety net.
+  alias: {
+    'https-proxy-agent': 'https-proxy-agent/dist/index.js',
+  },
   logLevel: 'info',
 });

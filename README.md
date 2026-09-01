@@ -265,6 +265,42 @@ All config is via environment variables (or `.env` in the project root):
 | `LARK_GROUP_CHAT_ENABLED` | no | `false` | Also forward group messages (sender allowlist still applies) |
 | `LARK_IMAGE_DOWNLOAD` | no | `true` | Download images and pass local paths to CodeBuddy |
 | `LARK_MEDIA_DIR` | no | `./.lark-media` | Where to cache downloaded media |
+| `HTTP_PROXY` / `HTTPS_PROXY` | no | _unset_ | Proxy for outbound HTTP(S) (e.g. corporate network). Read by axios / node's HTTPS agent. |
+| `NO_PROXY` | no | _unset_ | Comma-separated host suffixes that bypass the proxy. |
+| `NODE_TLS_REJECT_UNAUTHORIZED` | no | `1` | Set to `0` only if your proxy performs TLS interception with a private CA. |
+
+### `.env` search order
+
+The plugin searches for `.env` in this order; the first existing file wins:
+
+1. `<cwd>/.env` — workspace-level (where you ran CodeBuddy from)
+2. `<cwd>/../.env`
+3. `<plugin bundle>/../.env` — next to `dist/`
+4. `~/.codebuddy/.env` — user-level, survives workspace changes
+5. `~/.codebuddy/plugins/data/codebuddy-lark-channel/.env` — plugin data dir, survives reinstalls
+
+A line like `loaded 7 var(s) from /home/user/.codebuddy/.env` on stderr tells you which file the plugin actually used.
+
+### Corporate proxy / MITM
+
+If you are behind an HTTP proxy that must be used to reach Lark/Feishu, set the standard env vars in your `.env`:
+
+```bash
+HTTP_PROXY=http://proxy.corp.example.com:8080
+HTTPS_PROXY=http://proxy.corp.example.com:8080
+NO_PROXY=localhost,127.0.0.1,.corp.example.com
+```
+
+If your proxy performs TLS interception with a private CA, Node will reject the cert chain. To accept your corporate MITM appliance (only if you trust the operator):
+
+```bash
+NODE_TLS_REJECT_UNAUTHORIZED=0
+```
+
+Note: a known esbuild packaging quirk can bundle `https-proxy-agent`'s ES6 class where axios calls it as a function, which throws and breaks the WebSocket connection. This repo defends against it in two layers:
+
+1. `build.mjs` aliases `https-proxy-agent` → `https-proxy-agent/dist/index.js` so only the factory is bundled.
+2. `scripts/patch-dist.mjs` runs as part of `npm run build` and `postinstall`; if a stale `dist/index.cjs` still has the buggy pattern, it is auto-patched in place. Run `node scripts/patch-dist.mjs --check` to verify.
 
 ---
 

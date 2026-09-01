@@ -55,25 +55,37 @@ async function main(): Promise<void> {
   log('codebuddy-lark-channel ready');
 }
 
-async function loadDotenv(): Promise<void> {
+async function loadDotenv(): Promise<string | null> {
   try {
-    const { readFile } = await import('node:fs/promises');
+    const { readFile, stat } = await import('node:fs/promises');
     const { dirname, resolve } = await import('node:path');
-    // CodeBuddy starts MCP servers with the workspace as cwd. Also search next
-    // to the bundle so a local plugin can reliably use its own ignored .env.
+    const { homedir } = await import('node:os');
+    // CodeBuddy starts MCP servers with the workspace as cwd. Also search the
+    // user's CodeBuddy data dir so a global `.env` works for users who don't
+    // keep one in the workspace (common in corporate environments where the
+    // workspace is read-only or shared).
     const moduleDir = dirname(resolve(process.argv[1] || '.'));
+    const home = homedir();
     const candidates = [
       resolve(process.cwd(), '.env'),
       resolve(process.cwd(), '../.env'),
       resolve(moduleDir, '../.env'),
+      // CodeBuddy main config dir (where credentials.json lives).
+      resolve(home, '.codebuddy', '.env'),
+      // CodeBuddy-managed plugin data dir for this plugin (survives reinstalls).
+      resolve(home, '.codebuddy', 'plugins', 'data', 'codebuddy-lark-channel', '.env'),
     ];
     for (const path of candidates) {
       let raw: string;
       try {
+        // Skip directories; require a regular file.
+        const s = await stat(path);
+        if (!s.isFile()) continue;
         raw = await readFile(path, 'utf8');
       } catch {
         continue;
       }
+      let loaded = 0;
       for (const line of raw.split(/\r?\n/)) {
         const trimmed = line.trim();
         if (!trimmed || trimmed.startsWith('#')) continue;
@@ -90,12 +102,18 @@ async function loadDotenv(): Promise<void> {
         // Process-level configuration always wins. Fill only missing values so
         // an App ID supplied by CodeBuddy does not prevent loading a missing
         // secret (or optional settings) from .env during local development.
-        if (!(key in process.env)) process.env[key] = value;
+        if (!(key in process.env)) {
+          process.env[key] = value;
+          loaded += 1;
+        }
       }
-      break;
+      log(`loaded ${loaded} var(s) from ${path}`);
+      return path;
     }
+    return null;
   } catch {
     // ignore
+    return null;
   }
 }
 
