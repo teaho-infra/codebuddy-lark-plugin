@@ -132054,6 +132054,58 @@ var import_node_path = require("node:path");
 var PERMISSION_REPLY_RE = /^\s*(y|yes|n|no)\s+([a-km-z]{5})\s*$/i;
 var MAX_LARK_TEXT_CHARS = 2e4;
 var MAX_SEEN_MESSAGE_IDS = 2e3;
+function diagnoseConnectFailure(err) {
+  const lines = [];
+  const env = process.env;
+  const proxyVars = ["HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy", "ALL_PROXY", "all_proxy"];
+  const proxies = proxyVars.map((k) => [k, env[k]]).filter(([, v]) => typeof v === "string" && v.length > 0);
+  if (proxies.length > 0) {
+    lines.push(
+      "proxy env detected: " + proxies.map(([k, v]) => `${k}=${sanitizeProxyUrl(v)}`).join(", ")
+    );
+  } else {
+    lines.push("no HTTPS_PROXY/HTTP_PROXY set \u2014 outbound uses direct connect");
+  }
+  const noProxy = env.NO_PROXY || env.no_proxy;
+  if (noProxy) lines.push(`NO_PROXY=${noProxy}`);
+  const tlsReject = env.NODE_TLS_REJECT_UNAUTHORIZED;
+  if (tlsReject === "0") {
+    lines.push("NODE_TLS_REJECT_UNAUTHORIZED=0 (TLS cert validation disabled \u2014 required for some corp MITM proxies)");
+  } else {
+    lines.push(
+      "NODE_TLS_REJECT_UNAUTHORIZED=" + (tlsReject ?? "1") + " (TLS certs are validated; corporate MITM proxies will fail here)"
+    );
+  }
+  const msg = err.message.toLowerCase();
+  if (msg.includes("enotfound") || msg.includes("getaddrinfo") || msg.includes("eai_again")) {
+    lines.push("hint: looks like DNS \u2014 verify network/DNS or that proxy host resolves");
+  } else if (msg.includes("econnrefused")) {
+    lines.push("hint: TCP refused \u2014 proxy may be down, port blocked, or wrong scheme (http vs https)");
+  } else if (msg.includes("etimedout") || msg.includes("timeout")) {
+    lines.push("hint: TCP/WS timeout \u2014 proxy may be slow or blocking the WS upgrade");
+  } else if (msg.includes("unable_to_verify_leaf_signature") || msg.includes("cert") || msg.includes("unable_to_get_issuer")) {
+    lines.push("hint: TLS cert chain rejected \u2014 set NODE_TLS_REJECT_UNAUTHORIZED=0 if your proxy performs TLS interception");
+  } else if (msg.includes("unauthorized") || msg.includes("forbidden") || msg.includes("401") || msg.includes("403")) {
+    lines.push("hint: auth \u2014 double-check LARK_APP_ID and LARK_APP_SECRET are correct for your bot");
+  } else if (msg.includes("pullconnectconfig failed")) {
+    lines.push("hint: SDK could not fetch the WS endpoint \u2014 usually network/proxy/TLS, see above");
+  } else if (msg.includes("exhausted")) {
+    lines.push("hint: SDK gave up reconnecting \u2014 likely a permanent network/proxy/auth issue");
+  }
+  return lines.join(" | ");
+}
+function sanitizeProxyUrl(raw) {
+  try {
+    const u = new URL(raw);
+    if (u.username || u.password) {
+      u.username = "***";
+      u.password = "***";
+    }
+    return u.toString();
+  } catch {
+    return raw.length > 64 ? raw.slice(0, 64) + "\u2026" : raw;
+  }
+}
 function safeStringify(value) {
   try {
     return JSON.stringify(value);
@@ -132085,7 +132137,25 @@ var LarkBridge = class {
       appSecret: config2.appSecret,
       domain: config2.domain,
       loggerLevel: lark.LoggerLevel.warn,
-      logger: this.stderrLogger
+      logger: this.stderrLogger,
+      // Surface the SDK's internal connection state machine so the user can
+      // see *why* the WebSocket is not coming up. The SDK already logs these
+      // events through the redirected logger above; the callbacks add
+      // timestamps + structured prefixes that are easy to grep in stderr.
+      onReady: () => {
+        this.log("connection ready (long-connection established)");
+      },
+      onError: (err) => {
+        const detail = diagnoseConnectFailure(err);
+        this.log(`connection failed: ${err.message}`);
+        if (detail) this.log(`diagnostics: ${detail}`);
+      },
+      onReconnecting: () => {
+        this.log("connection lost, reconnecting (will retry with backoff)");
+      },
+      onReconnected: () => {
+        this.log("connection re-established after a previous drop");
+      }
     });
     this.mediaDirAbs = (0, import_node_path.resolve)(config2.mediaDir);
   }
@@ -132100,7 +132170,10 @@ var LarkBridge = class {
     this.handlers.log?.(`[lark] ${line}`);
   }
   sdkLog(level, args) {
-    if (level === "warn" || level === "error" || level === "fatal") {
+    const isImportantWs = level === "info" && args.some(
+      (a) => typeof a === "string" && (a.startsWith("[ws]") || a.includes("ws "))
+    );
+    if (level === "warn" || level === "error" || level === "fatal" || isImportantWs) {
       const text = args.map((a) => typeof a === "string" ? a : safeStringify(a)).join(" ");
       this.handlers.log?.(`[lark-sdk:${level}] ${text}`);
     }
@@ -132126,8 +132199,18 @@ var LarkBridge = class {
         return {};
       }
     });
-    await this.wsClient.start({ eventDispatcher });
-    this.log("long-connection (WS) event client started");
+    this.log(`connecting to ${this.config.domain} (long-connection WS)...`);
+    const startedAt = Date.now();
+    try {
+      await this.wsClient.start({ eventDispatcher });
+    } catch (err) {
+      const e = err;
+      this.log(`start() threw after ${Date.now() - startedAt}ms: ${e.message}`);
+      const detail = diagnoseConnectFailure(e);
+      if (detail) this.log(`diagnostics: ${detail}`);
+      throw err;
+    }
+    this.log(`long-connection (WS) event client started in ${Date.now() - startedAt}ms`);
   }
   async handleReceiveEvent(data) {
     const senderId = data.sender?.sender_id?.open_id || "";

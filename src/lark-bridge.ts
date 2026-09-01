@@ -43,6 +43,85 @@ const PERMISSION_REPLY_RE = /^\s*(y|yes|n|no)\s+([a-km-z]{5})\s*$/i;
 const MAX_LARK_TEXT_CHARS = 20_000;
 const MAX_SEEN_MESSAGE_IDS = 2_000;
 
+/**
+ * Inspect the local environment for common reasons a long-connection to
+ * `open.feishu.cn` (or `open.larksuite.com`) cannot be established, and
+ * return a one-line, sanitized diagnostic for the user. The error message
+ * from the SDK only contains the SDK-side string; we re-derive likely root
+ * causes from env so a user in a corporate network can immediately tell
+ * whether the problem is proxy, TLS, or DNS.
+ *
+ * This is intentionally heuristic. We do not run network probes; we only
+ * summarize what the process can already see.
+ */
+function diagnoseConnectFailure(err: Error): string {
+  const lines: string[] = [];
+  const env = process.env;
+
+  // Proxy detection — note we hide credentials embedded in URLs.
+  const proxyVars = ['HTTPS_PROXY', 'https_proxy', 'HTTP_PROXY', 'http_proxy', 'ALL_PROXY', 'all_proxy'];
+  const proxies = proxyVars
+    .map((k) => [k, env[k]] as const)
+    .filter(([, v]) => typeof v === 'string' && v.length > 0);
+  if (proxies.length > 0) {
+    lines.push(
+      'proxy env detected: ' +
+        proxies.map(([k, v]) => `${k}=${sanitizeProxyUrl(v as string)}`).join(', '),
+    );
+  } else {
+    lines.push('no HTTPS_PROXY/HTTP_PROXY set — outbound uses direct connect');
+  }
+  const noProxy = env.NO_PROXY || env.no_proxy;
+  if (noProxy) lines.push(`NO_PROXY=${noProxy}`);
+
+  // TLS — corp MITM appliances typically need this.
+  const tlsReject = env.NODE_TLS_REJECT_UNAUTHORIZED;
+  if (tlsReject === '0') {
+    lines.push('NODE_TLS_REJECT_UNAUTHORIZED=0 (TLS cert validation disabled — required for some corp MITM proxies)');
+  } else {
+    lines.push(
+      'NODE_TLS_REJECT_UNAUTHORIZED=' + (tlsReject ?? '1') +
+        ' (TLS certs are validated; corporate MITM proxies will fail here)',
+    );
+  }
+
+  // Heuristic hint from the SDK error message — the SDK tends to surface
+  // these substrings.
+  const msg = err.message.toLowerCase();
+  if (msg.includes('enotfound') || msg.includes('getaddrinfo') || msg.includes('eai_again')) {
+    lines.push('hint: looks like DNS — verify network/DNS or that proxy host resolves');
+  } else if (msg.includes('econnrefused')) {
+    lines.push('hint: TCP refused — proxy may be down, port blocked, or wrong scheme (http vs https)');
+  } else if (msg.includes('etimedout') || msg.includes('timeout')) {
+    lines.push('hint: TCP/WS timeout — proxy may be slow or blocking the WS upgrade');
+  } else if (msg.includes('unable_to_verify_leaf_signature') || msg.includes('cert') || msg.includes('unable_to_get_issuer')) {
+    lines.push('hint: TLS cert chain rejected — set NODE_TLS_REJECT_UNAUTHORIZED=0 if your proxy performs TLS interception');
+  } else if (msg.includes('unauthorized') || msg.includes('forbidden') || msg.includes('401') || msg.includes('403')) {
+    lines.push('hint: auth — double-check LARK_APP_ID and LARK_APP_SECRET are correct for your bot');
+  } else if (msg.includes('pullconnectconfig failed')) {
+    lines.push('hint: SDK could not fetch the WS endpoint — usually network/proxy/TLS, see above');
+  } else if (msg.includes('exhausted')) {
+    lines.push('hint: SDK gave up reconnecting — likely a permanent network/proxy/auth issue');
+  }
+
+  return lines.join(' | ');
+}
+
+/** Strip userinfo from a proxy URL like http://user:pass@host:port -> http://host:port. */
+function sanitizeProxyUrl(raw: string): string {
+  try {
+    const u = new URL(raw);
+    if (u.username || u.password) {
+      u.username = '***';
+      u.password = '***';
+    }
+    return u.toString();
+  } catch {
+    // Unparseable — return as-is but truncated.
+    return raw.length > 64 ? raw.slice(0, 64) + '…' : raw;
+  }
+}
+
 function safeStringify(value: unknown): string {
   try {
     return JSON.stringify(value);
@@ -107,6 +186,28 @@ export class LarkBridge {
       domain: config.domain,
       loggerLevel: lark.LoggerLevel.warn,
       logger: this.stderrLogger,
+      // Surface the SDK's internal connection state machine so the user can
+      // see *why* the WebSocket is not coming up. The SDK already logs these
+      // events through the redirected logger above; the callbacks add
+      // timestamps + structured prefixes that are easy to grep in stderr.
+      onReady: () => {
+        this.log('connection ready (long-connection established)');
+      },
+      onError: (err) => {
+        // `err` from the SDK is always `new Error(string)` — the SDK throws
+        // away the original axios/Undici error. Diagnose here using env so
+        // the user can see whether proxy/TLS is the likely culprit without
+        // re-running with NODE_DEBUG=net,https.
+        const detail = diagnoseConnectFailure(err);
+        this.log(`connection failed: ${err.message}`);
+        if (detail) this.log(`diagnostics: ${detail}`);
+      },
+      onReconnecting: () => {
+        this.log('connection lost, reconnecting (will retry with backoff)');
+      },
+      onReconnected: () => {
+        this.log('connection re-established after a previous drop');
+      },
     });
 
     this.mediaDirAbs = resolve(config.mediaDir);
@@ -117,8 +218,16 @@ export class LarkBridge {
   }
 
   private sdkLog(level: string, args: unknown[]) {
-    // Only surface warn/error from the SDK to keep MCP stderr noise low.
-    if (level === 'warn' || level === 'error' || level === 'fatal') {
+    // Surface warn/error/fatal always, and also `info` for the SDK's `[ws]`
+    // channel so the user can see reconnect attempts / handshake state.
+    // The default info level is filtered out because the SDK is otherwise
+    // very chatty on every API call.
+    const isImportantWs =
+      level === 'info' &&
+      args.some(
+        (a) => typeof a === 'string' && (a.startsWith('[ws]') || a.includes('ws ')),
+      );
+    if (level === 'warn' || level === 'error' || level === 'fatal' || isImportantWs) {
       const text = args
         .map((a) => (typeof a === 'string' ? a : safeStringify(a)))
         .join(' ');
@@ -150,8 +259,23 @@ export class LarkBridge {
       },
     });
 
-    await this.wsClient.start({ eventDispatcher });
-    this.log('long-connection (WS) event client started');
+    this.log(`connecting to ${this.config.domain} (long-connection WS)...`);
+    const startedAt = Date.now();
+    try {
+      await this.wsClient.start({ eventDispatcher });
+    } catch (err) {
+      // wsClient.start() can throw synchronously if construction failed (we
+      // catch that above in the ctor). It can also throw if the first
+      // connect attempt rejects before onError fires (rare). Always log +
+      // diagnose here, otherwise the failure is silent and the user only
+      // sees "long-connection (WS) event client started" never appear.
+      const e = err as Error;
+      this.log(`start() threw after ${Date.now() - startedAt}ms: ${e.message}`);
+      const detail = diagnoseConnectFailure(e);
+      if (detail) this.log(`diagnostics: ${detail}`);
+      throw err;
+    }
+    this.log(`long-connection (WS) event client started in ${Date.now() - startedAt}ms`);
   }
 
   private async handleReceiveEvent(
