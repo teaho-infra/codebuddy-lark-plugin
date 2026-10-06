@@ -17,7 +17,7 @@ async function main(): Promise<void> {
   const config = selection.config;
 
   if (!config) {
-    const channel = new ChannelServer(log, false);
+    const channel = new ChannelServer(log, false, 'inactive');
     await channel.listen();
     log(`no Lark bot selected (${selection.source}); waiting as an inactive channel`);
     return;

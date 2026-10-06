@@ -90,9 +90,15 @@ observed kind. The daemon uses the App ID, Secret and other plugin options
 from CodeBuddy settings. When `daemon_only` is true, an existing
 `lark-channel.json` is ignored; you do not need to create one. Set it to
 `"false"` to return to the normal bot selection rules.
-After updating the plugin and restarting CodeBuddy, the daemon log should say
+Ordinary CodeBuddy sessions still load the MCP server, but it identifies itself
+as an inactive channel. Its `reply` tool must not be used for ordinary chat:
+only an actual incoming Lark `<channel ... chat_id="...">` message in the same
+session can be answered through that tool.
+When the plugin's stderr is captured, the daemon reports
 `selected Lark bot legacy via daemon_only settings`; an ordinary session
-should say `no Lark bot selected (daemon_only (kind=interactive))`.
+reports `no Lark bot selected (daemon_only (kind=interactive))`. Some CodeBuddy
+daemon launches redirect plugin stderr to `/dev/null`, so those lines may not
+appear in the daemon's log file.
 
 ### One shared bot file for multiple CodeBuddy sessions (recommended)
 
