@@ -43,7 +43,9 @@
 
 ## 2. 看懂“当前实例对应哪个 bot”
 
-打开 `src/instance-config.ts` 的 `loadRuntimeConfig()`。默认配置文件是 `~/.codebuddy/lark-channel.json`，仓库里的 `.codebuddy/lark-channel.example.json` 提供了可复制的示例。例如：
+打开 `src/instance-config.ts` 的 `loadRuntimeConfig()`。先看 `daemon_only` 分支：当 `settings.json` 的插件选项为 `"daemon_only": "true"` 时，只有 `CODEBUDDY_SESSION_KIND=daemon` 会加载插件设置中的 bot 凭据，其余实例保持不连接；这个分支不读取中央配置文件。
+
+一般的多 bot 模式才读取 `~/.codebuddy/lark-channel.json`。仓库里的 `.codebuddy/lark-channel.example.json` 提供了可复制的示例。例如：
 
 ```json
 {

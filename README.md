@@ -61,6 +61,39 @@ Copy that `ou_...` into `allowed_senders` (or legacy `LARK_ALLOWED_SENDERS`; com
 
 ## Configure CodeBuddy Code
 
+### Only the daemon connects (no shared bot file)
+
+For one bot that should respond only through the CodeBuddy daemon, add
+`"daemon_only": "true"` to this plugin's options in
+`~/.codebuddy/settings.json`:
+
+```json
+{
+  "pluginConfigs": {
+    "codebuddy-lark-channel@codebuddy-lark-plugin": {
+      "options": {
+        "app_id": "cli_your_app_id",
+        "allowed_senders": "ou_your_open_id",
+        "daemon_only": "true"
+      }
+    }
+  }
+}
+```
+
+Keep `app_secret` in `~/.codebuddy/credentials.json` under
+`pluginSecrets["codebuddy-lark-channel@codebuddy-lark-plugin"]`, as shown in
+the legacy configuration section below. `daemon_only` requires the plugin
+process to receive `CODEBUDDY_SESSION_KIND=daemon`. An interactive or
+background session, or one with an unknown kind, stays inactive and logs the
+observed kind. The daemon uses the App ID, Secret and other plugin options
+from CodeBuddy settings. When `daemon_only` is true, an existing
+`lark-channel.json` is ignored; you do not need to create one. Set it to
+`"false"` to return to the normal bot selection rules.
+After updating the plugin and restarting CodeBuddy, the daemon log should say
+`selected Lark bot legacy via daemon_only settings`; an ordinary session
+should say `no Lark bot selected (daemon_only (kind=interactive))`.
+
 ### One shared bot file for multiple CodeBuddy sessions (recommended)
 
 Put your bot profiles and instance bindings in `~/.codebuddy/lark-channel.json`
@@ -109,8 +142,8 @@ It can be put in an MCP server's `args` array; it is not a top-level
 bindings. A per-process CodeBuddy `--settings` value can set that plugin
 option. `--lark-config <path>`, `LARK_BOT_CONFIG`, or the plugin option
 `bot_config` changes the JSON file path. The central file takes precedence
-over legacy `LARK_APP_ID` / `LARK_APP_SECRET` variables. If it is absent,
-the old environment-based configuration still works.
+over legacy `LARK_APP_ID` / `LARK_APP_SECRET` variables when `daemon_only` is
+false. If it is absent, the old environment-based configuration still works.
 
 Only one local process connects to a given App ID. The plugin reserves a
 deterministic loopback TCP port before starting the Lark WebSocket; duplicate

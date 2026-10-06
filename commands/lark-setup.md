@@ -6,6 +6,13 @@ allowed-tools: Read, Edit, Write, Bash
 
 Configure the Lark/Feishu bot that this channel plugin connects to.
 
+If the user wants **only the daemon** to connect to one bot, use the legacy
+settings/credentials flow below and set `daemon_only` to the string `"true"`
+in the plugin's `settings.json` options. Do not create a shared
+`lark-channel.json` for this case. An existing shared file is ignored when
+`daemon_only` is true. Verify the option is present and that `app_secret` is
+still stored in `credentials.json`, without printing its value.
+
 ## Recommended: shared multi-instance configuration
 
 By default, create or update `~/.codebuddy/lark-channel.json`. This single
@@ -54,7 +61,8 @@ after changing the file. `codebuddy daemon start` itself has no
 
 The legacy single-bot configuration below is for users who explicitly want
 to keep their existing `settings.json` / `credentials.json` setup. If the
-central JSON file exists, it takes precedence over those legacy values.
+central JSON file exists, it takes precedence over those values unless
+`daemon_only` is true.
 
 ## Legacy single-bot configuration
 
@@ -100,6 +108,7 @@ asking. Otherwise ask the user, one question at a time:
 | `group_chat_enabled` | no | `false` | `true`/`false` |
 | `image_download` | no | `true` | `true`/`false` |
 | `allow_all` | no | `false` | `true` accepts messages from anyone — prompt-injection risk, testing only |
+| `daemon_only` | no | `false` | `true` allows only a CodeBuddy daemon session to connect; ignores `lark-channel.json` |
 
 Store booleans as the strings `"true"` / `"false"`.
 
@@ -120,7 +129,8 @@ Read `~/.codebuddy/settings.json` (create it with `{}` if missing) and merge:
         "domain": "https://open.feishu.cn",
         "group_chat_enabled": "false",
         "image_download": "true",
-        "allow_all": "false"
+        "allow_all": "false",
+        "daemon_only": "true"
       }
     }
   }

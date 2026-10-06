@@ -1,6 +1,6 @@
 {
   "name": "codebuddy-lark-plugin",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "CodeBuddy Code channel plugin: bridge Lark/Feishu bot messages to a CodeBuddy session.",
   "type": "module",
   "bin": {

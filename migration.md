@@ -4,7 +4,9 @@
 
 如果同时运行多个 CodeBuddy（包括 daemon），请优先使用
 [`~/.codebuddy/lark-channel.json` 多实例配置](README.md#one-shared-bot-file-for-multiple-codebuddy-sessions-recommended)：
-按会话 ID、名称、工作目录或 `daemon` 类型把实例分配给不同 bot。未匹配的实例不会连接飞书；同一 App ID 即使重复分配，本机也只会有一个连接。下面第 3 节的 `settings.json` / `credentials.json` 是旧版单 bot 配置方式；中央文件存在时以中央文件为准。
+按会话 ID、名称、工作目录或 `daemon` 类型把实例分配给不同 bot。未匹配的实例不会连接飞书；同一 App ID 即使重复分配，本机也只会有一个连接。下面第 3 节的 `settings.json` / `credentials.json` 是旧版单 bot 配置方式；未开启 `daemon_only` 时，中央文件存在则以中央文件为准。
+
+如果只有一个 bot，且**只希望 daemon 响应**，直接在 `~/.codebuddy/settings.json` 的本插件 `options` 中加入 `"daemon_only": "true"`；App ID 等普通选项仍放在 `settings.json`，App Secret 放在 `credentials.json`。这条配置会跳过 `lark-channel.json`，无需新增中央文件。详情见 [README 的 daemon-only 示例](README.md#only-the-daemon-connects-no-shared-bot-file)。
 
 架构一句话：本插件是一个 stdio MCP 服务器（channel 插件），通过飞书长连接（WebSocket）收发消息，**不需要公网回调地址 / 反向代理**。
 
@@ -126,7 +128,8 @@ codebuddy --dangerously-load-development-channels server:lark
         "domain": "https://open.feishu.cn",
         "group_chat_enabled": "false",
         "image_download": "true",
-        "allow_all": "false"
+        "allow_all": "false",
+        "daemon_only": "true"
       }
     }
   }
@@ -144,7 +147,7 @@ codebuddy --dangerously-load-development-channels server:lark
 }
 ```
 
-运行时这些值会以 `CODEBUDDY_PLUGIN_OPTION_<KEY>` 环境变量传给 MCP 进程；显式 `LARK_*` 变量和本地 `.env` 优先级更高。
+运行时这些值会以 `CODEBUDDY_PLUGIN_OPTION_<KEY>` 环境变量传给 MCP 进程。开启 `daemon_only` 后，daemon 优先使用这里的选项与 `credentials.json` 中的 App Secret；关闭时显式 `LARK_*` 变量和本地 `.env` 优先级更高。
 
 > 注意：stdio MCP 不会继承所有 shell 环境变量，但插件启动后会自行搜索 `.env`，包括 `~/.codebuddy/.env`。若使用多实例中央配置 `lark-channel.json`，则由匹配到的 bot 配置决定 App ID 与 Secret。
 

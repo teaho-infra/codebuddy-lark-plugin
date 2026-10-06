@@ -132072,6 +132072,32 @@ function loadConfig(env = process.env) {
 }
 
 // src/instance-config.ts
+function daemonOnlyEnabled(env) {
+  const value = env.CODEBUDDY_PLUGIN_OPTION_DAEMON_ONLY ?? env.LARK_DAEMON_ONLY;
+  if (value === void 0 || value === "") return false;
+  const normalized = value.trim().toLowerCase();
+  if (["true", "1", "yes", "on"].includes(normalized)) return true;
+  if (["false", "0", "no", "off"].includes(normalized)) return false;
+  throw new Error("daemon_only must be true or false");
+}
+function settingsFirstEnv(env) {
+  const preferred = { ...env };
+  for (const option of [
+    "APP_ID",
+    "APP_SECRET",
+    "DOMAIN",
+    "ALLOWED_SENDERS",
+    "ALLOW_ALL",
+    "GROUP_CHAT_ENABLED",
+    "IMAGE_DOWNLOAD",
+    "INSTANCE_PORT",
+    "INSTANCE_RETRY_MS"
+  ]) {
+    const value = env[`CODEBUDDY_PLUGIN_OPTION_${option}`];
+    if (value !== void 0 && value !== "") preferred[`LARK_${option}`] = value;
+  }
+  return preferred;
+}
 function cliValue(argv, flag) {
   const index = argv.indexOf(flag);
   if (index >= 0) {
@@ -132146,6 +132172,18 @@ async function loadRuntimeConfig(options = {}) {
   const argv = options.argv ?? process.argv.slice(2);
   const cwd = options.cwd ?? process.cwd();
   const home = options.home ?? (0, import_node_os.homedir)();
+  if (daemonOnlyEnabled(env)) {
+    const kind = env.CODEBUDDY_SESSION_KIND || "unknown";
+    if (kind !== "daemon") {
+      return { botName: null, config: null, source: `daemon_only (kind=${kind})`, configPath: null };
+    }
+    return {
+      botName: "legacy",
+      config: loadConfig(settingsFirstEnv(env)),
+      source: "daemon_only settings",
+      configPath: null
+    };
+  }
   const configDir = env.CODEBUDDY_CONFIG_DIR || (0, import_node_path.join)(home, ".codebuddy");
   const configPath = cliValue(argv, "--lark-config") || env.LARK_BOT_CONFIG || env.CODEBUDDY_PLUGIN_OPTION_BOT_CONFIG || (0, import_node_path.join)(configDir, "lark-channel.json");
   let raw;
@@ -150498,7 +150536,7 @@ var ChannelServer = class {
     const experimental = { "claude/channel": {} };
     if (permissionRelayEnabled) experimental["claude/channel/permission"] = {};
     this.mcp = new Server(
-      { name: "codebuddy-lark-channel", version: "0.2.4" },
+      { name: "codebuddy-lark-channel", version: "0.2.5" },
       {
         capabilities: {
           experimental,

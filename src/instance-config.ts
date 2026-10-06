@@ -44,6 +44,27 @@ interface LoadOptions {
   home?: string;
 }
 
+function daemonOnlyEnabled(env: NodeJS.ProcessEnv): boolean {
+  const value = env.CODEBUDDY_PLUGIN_OPTION_DAEMON_ONLY ?? env.LARK_DAEMON_ONLY;
+  if (value === undefined || value === '') return false;
+  const normalized = value.trim().toLowerCase();
+  if (['true', '1', 'yes', 'on'].includes(normalized)) return true;
+  if (['false', '0', 'no', 'off'].includes(normalized)) return false;
+  throw new Error('daemon_only must be true or false');
+}
+
+function settingsFirstEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  const preferred = { ...env };
+  for (const option of [
+    'APP_ID', 'APP_SECRET', 'DOMAIN', 'ALLOWED_SENDERS', 'ALLOW_ALL',
+    'GROUP_CHAT_ENABLED', 'IMAGE_DOWNLOAD', 'INSTANCE_PORT', 'INSTANCE_RETRY_MS',
+  ]) {
+    const value = env[`CODEBUDDY_PLUGIN_OPTION_${option}`];
+    if (value !== undefined && value !== '') preferred[`LARK_${option}`] = value;
+  }
+  return preferred;
+}
+
 function cliValue(argv: string[], flag: string): string | undefined {
   const index = argv.indexOf(flag);
   if (index >= 0) {
@@ -131,6 +152,18 @@ export async function loadRuntimeConfig(options: LoadOptions = {}): Promise<Runt
   const argv = options.argv ?? process.argv.slice(2);
   const cwd = options.cwd ?? process.cwd();
   const home = options.home ?? homedir();
+  if (daemonOnlyEnabled(env)) {
+    const kind = env.CODEBUDDY_SESSION_KIND || 'unknown';
+    if (kind !== 'daemon') {
+      return { botName: null, config: null, source: `daemon_only (kind=${kind})`, configPath: null };
+    }
+    return {
+      botName: 'legacy',
+      config: loadConfig(settingsFirstEnv(env)),
+      source: 'daemon_only settings',
+      configPath: null,
+    };
+  }
   const configDir = env.CODEBUDDY_CONFIG_DIR || join(home, '.codebuddy');
   const configPath = cliValue(argv, '--lark-config') || env.LARK_BOT_CONFIG ||
     env.CODEBUDDY_PLUGIN_OPTION_BOT_CONFIG ||

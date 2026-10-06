@@ -122,3 +122,64 @@ test('CODEBUDDY_CONFIG_DIR moves the shared bot file', async () => {
   });
   assert.equal(selected.botName, 'daemon');
 });
+
+test('daemon_only excludes an ordinary session even when a shared bot file matches', async () => {
+  const home = await fixture();
+  const selected = await loadRuntimeConfig({
+    home,
+    cwd: '/work/project',
+    env: {
+      CODEBUDDY_SESSION_ID: 'chosen',
+      CODEBUDDY_SESSION_KIND: 'interactive',
+      CODEBUDDY_PLUGIN_OPTION_DAEMON_ONLY: 'true',
+    },
+  });
+  assert.equal(selected.botName, null);
+  assert.equal(selected.config, null);
+  assert.match(selected.source, /daemon_only/);
+});
+
+test('daemon_only uses settings credentials on daemon and ignores shared bot file', async () => {
+  const home = await fixture();
+  const selected = await loadRuntimeConfig({
+    home,
+    cwd: '/work/project',
+    env: {
+      CODEBUDDY_SESSION_KIND: 'daemon',
+      CODEBUDDY_PLUGIN_OPTION_DAEMON_ONLY: 'true',
+      CODEBUDDY_PLUGIN_OPTION_APP_ID: 'cli_settings',
+      CODEBUDDY_PLUGIN_OPTION_APP_SECRET: 'settings-secret',
+      CODEBUDDY_PLUGIN_OPTION_ALLOWED_SENDERS: 'ou_settings',
+      LARK_APP_ID: 'cli_old_env',
+      LARK_APP_SECRET: 'old-env-secret',
+      LARK_ALLOWED_SENDERS: 'ou_old_env',
+    },
+  });
+  assert.equal(selected.botName, 'legacy');
+  assert.equal(selected.config?.appId, 'cli_settings');
+  assert.deepEqual(selected.config?.allowedSenders, ['ou_settings']);
+  assert.equal(selected.configPath, null);
+});
+
+test('daemon_only fails closed when the session kind is unknown', async () => {
+  const home = await mkdtemp(join(tmpdir(), 'lark-config-'));
+  const selected = await loadRuntimeConfig({
+    home,
+    cwd: '/other',
+    env: { CODEBUDDY_PLUGIN_OPTION_DAEMON_ONLY: 'true' },
+  });
+  assert.equal(selected.config, null);
+  assert.match(selected.source, /kind=unknown/);
+});
+
+test('daemon_only rejects a misspelled value', async () => {
+  const home = await mkdtemp(join(tmpdir(), 'lark-config-'));
+  await assert.rejects(
+    loadRuntimeConfig({
+      home,
+      cwd: '/other',
+      env: { CODEBUDDY_PLUGIN_OPTION_DAEMON_ONLY: 'ture' },
+    }),
+    /daemon_only must be true or false/,
+  );
+});

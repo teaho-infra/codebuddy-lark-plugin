@@ -1,10 +1,14 @@
 {
   "name": "codebuddy-lark-channel",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Connect a Feishu/Lark bot to a running CodeBuddy Code session.",
   "license": "MIT",
   "keywords": ["lark", "feishu", "bot", "channel"],
   "userConfig": {
+    "daemon_only": {
+      "description": "Only a CodeBuddy daemon session may connect to this bot (true/false); uses app_id and app_secret from plugin settings",
+      "sensitive": false
+    },
     "bot": {
       "description": "Optional bot name in ~/.codebuddy/lark-channel.json; overrides instance bindings",
       "sensitive": false
