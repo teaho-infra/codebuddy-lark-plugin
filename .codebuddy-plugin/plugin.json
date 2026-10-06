@@ -1,10 +1,22 @@
 {
   "name": "codebuddy-lark-channel",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Connect a Feishu/Lark bot to a running CodeBuddy Code session.",
   "license": "MIT",
   "keywords": ["lark", "feishu", "bot", "channel"],
   "userConfig": {
+    "bot": {
+      "description": "Optional bot name in ~/.codebuddy/lark-channel.json; overrides instance bindings",
+      "sensitive": false
+    },
+    "bot_config": {
+      "description": "Optional path to a shared bot configuration JSON file",
+      "sensitive": false
+    },
+    "instance_id": {
+      "description": "Optional instance ID matched by bindings.session_ids",
+      "sensitive": false
+    },
     "app_id": {
       "description": "Feishu/Lark self-built app ID (cli_...)",
       "sensitive": false

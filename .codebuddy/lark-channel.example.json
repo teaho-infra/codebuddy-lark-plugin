@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "bots": {
+    "daemon-bot": {
+      "app_id": "cli_replace_with_daemon_bot_app_id",
+      "app_secret": "replace-with-daemon-bot-secret",
+      "allowed_senders": "ou_replace_with_your_open_id"
+    },
+    "work-bot": {
+      "app_id": "cli_replace_with_work_bot_app_id",
+      "app_secret": "replace-with-work-bot-secret",
+      "allowed_senders": "ou_replace_with_your_open_id"
+    }
+  },
+  "bindings": {
+    "session_kinds": {
+      "daemon": "daemon-bot"
+    },
+    "session_ids": {
+      "work": "work-bot"
+    }
+  }
+}

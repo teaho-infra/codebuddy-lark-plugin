@@ -2,6 +2,10 @@
 
 本文面向第一次拿到本仓库的人：从创建飞书应用开始，到在 CodeBuddy Code 里跑通「Lark 发消息 → CodeBuddy 干活 → 机器人回消息」。
 
+如果同时运行多个 CodeBuddy（包括 daemon），请优先使用
+[`~/.codebuddy/lark-channel.json` 多实例配置](README.md#one-shared-bot-file-for-multiple-codebuddy-sessions-recommended)：
+按会话 ID、名称、工作目录或 `daemon` 类型把实例分配给不同 bot。未匹配的实例不会连接飞书；同一 App ID 即使重复分配，本机也只会有一个连接。下面第 3 节的 `settings.json` / `credentials.json` 是旧版单 bot 配置方式；中央文件存在时以中央文件为准。
+
 架构一句话：本插件是一个 stdio MCP 服务器（channel 插件），通过飞书长连接（WebSocket）收发消息，**不需要公网回调地址 / 反向代理**。
 
 ```
@@ -57,7 +61,7 @@ codebuddy plugin install codebuddy-lark-channel@codebuddy-lark-plugin
 
 安装后重启 CodeBuddy（或 `/reload-plugins`），channel 即被加载。
 
-> **更新插件**：改动源码后必须 `git commit` 并 bump `package.json` / `plugin.json` / `marketplace.json` 三处版本号，再重新 install——否则缓存目录 `plugins/cache/<mp>/<plugin>/<version>` 会复用旧内容。
+> **更新已安装插件**：先构建，并同步提高 `package.json`、`plugin.json`、`marketplace.json` 的版本号，然后 `git commit`。如果 marketplace 来源是 GitHub，还要 `git push`；若来源是本地目录则不需要推送。接着执行 `codebuddy plugin marketplace update codebuddy-lark-plugin` 和 `codebuddy plugin update codebuddy-lark-channel@codebuddy-lark-plugin`，最后重启 CodeBuddy（daemon 用 `codebuddy daemon restart`）。不要复用旧版本号，否则 `plugins/cache/<mp>/<plugin>/<version>` 可能继续提供旧代码。
 
 ### 方式 B：直接配置为 MCP 服务器（免安装，本地调试）
 
@@ -142,7 +146,7 @@ codebuddy --dangerously-load-development-channels server:lark
 
 运行时这些值会以 `CODEBUDDY_PLUGIN_OPTION_<KEY>` 环境变量传给 MCP 进程；显式 `LARK_*` 变量和本地 `.env` 优先级更高。
 
-> 陷阱：`~/.codebuddy/.env` 对插件的 MCP 服务器**无效**——stdio MCP 只继承 `HOME`/`PATH` 等少量变量。本地开发请把 `.env` 放在仓库根目录（runtime 会自动搜索 cwd、cwd 上一级和 bundle 旁边的 `.env`）。
+> 注意：stdio MCP 不会继承所有 shell 环境变量，但插件启动后会自行搜索 `.env`，包括 `~/.codebuddy/.env`。若使用多实例中央配置 `lark-channel.json`，则由匹配到的 bot 配置决定 App ID 与 Secret。
 
 ### 方式 B 直接 MCP：.env 或 env 块
 

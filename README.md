@@ -43,30 +43,94 @@ It is a bidirectional MCP server (over stdio) implementing the CodeBuddy channel
 cd codebuddy-lark-plugin
 npm install
 npm run build
-cp .env.example .env
-# edit .env and set LARK_APP_ID / LARK_APP_SECRET
+# For a single bot without the shared config, copy .env.example to .env.
+# For multiple instances, configure ~/.codebuddy/lark-channel.json below.
 ```
 
 ### Find your open_id (for the allowlist)
 
-Leave `LARK_ALLOWED_SENDERS` empty first, start CodeBuddy with the channel (see below), DM the bot once, then check the logs — you'll see a line like:
+Leave `allowed_senders` in the shared bot profile (or legacy `LARK_ALLOWED_SENDERS`) empty first, start CodeBuddy with the channel (see below), DM the bot once, then check the logs — you'll see a line like:
 
 ```
 [lark] dropping message from unlisted sender ou_xxxxxxxxxxxxxxxx
 ```
 
-Copy that `ou_...` into `LARK_ALLOWED_SENDERS` (comma-separated for multiple users), then restart.
+Copy that `ou_...` into `allowed_senders` (or legacy `LARK_ALLOWED_SENDERS`; comma-separated for multiple users), then restart.
 
 ---
 
 ## Configure CodeBuddy Code
+
+### One shared bot file for multiple CodeBuddy sessions (recommended)
+
+Put your bot profiles and instance bindings in `~/.codebuddy/lark-channel.json`
+(or `$CODEBUDDY_CONFIG_DIR/lark-channel.json` if that directory is configured).
+Start from [the example](.codebuddy/lark-channel.example.json) if this is your
+first setup; replace its placeholder credentials in your private copy.
+Keep this file outside the repository and restrict access because it contains
+App Secrets (`chmod 600 ~/.codebuddy/lark-channel.json` on macOS/Linux).
+
+```json
+{
+  "version": 1,
+  "bots": {
+    "daemon-bot": {
+      "app_id": "cli_daemon_bot_id",
+      "app_secret": "daemon-bot-secret",
+      "allowed_senders": "ou_your_open_id"
+    },
+    "project-bot": {
+      "app_id": "cli_project_bot_id",
+      "app_secret": "project-bot-secret",
+      "allowed_senders": "ou_your_open_id",
+      "group_chat_enabled": false
+    }
+  },
+  "bindings": {
+    "session_kinds": { "daemon": "daemon-bot" },
+    "session_ids": { "my-project": "project-bot" },
+    "workspaces": { "/absolute/path/to/project": "project-bot" }
+  }
+}
+```
+
+For an ordinary session, `codebuddy --session-id my-project` selects
+`project-bot`. A daemon worker uses `daemon-bot`. An unmatched process keeps
+its MCP channel available but does not connect to any bot. You can also bind
+`session_names` (for named background sessions) or set `default_bot` if every
+unmatched instance should compete for one bot. Bindings are checked in this
+order: session ID, session name, exact absolute workspace path, session kind,
+then `default_bot`. CodeBuddy session kinds are `interactive`, `bg`, and
+`daemon`.
+
+The `--lark-bot <name>` **plugin process argument** overrides the bindings.
+It can be put in an MCP server's `args` array; it is not a top-level
+`codebuddy` option. `LARK_BOT` or the plugin option `bot` also overrides the
+bindings. A per-process CodeBuddy `--settings` value can set that plugin
+option. `--lark-config <path>`, `LARK_BOT_CONFIG`, or the plugin option
+`bot_config` changes the JSON file path. The central file takes precedence
+over legacy `LARK_APP_ID` / `LARK_APP_SECRET` variables. If it is absent,
+the old environment-based configuration still works.
+
+Only one local process connects to a given App ID. The plugin reserves a
+deterministic loopback TCP port before starting the Lark WebSocket; duplicate
+instances wait and retry. The operating system releases the port when the
+owner exits, allowing a standby instance to take over. For port conflicts,
+set `instance_port` (1–65535) in the bot profile; set `instance_retry_ms`
+(100–60000, default 2000) to adjust the retry period. Instances that use the
+same App ID must use the same port. Check stderr for `selected Lark bot`,
+`acquired bot port`, and `port ... is occupied` when troubleshooting.
+
+For a step-by-step tour of the source, see [the Chinese code reading guide](docs/code-reading-guide.zh-CN.md).
+
+### Legacy single-bot configuration
 
 The repository is a native CodeBuddy plugin. Settings are declared through
 top-level `userConfig`; the App Secret is marked sensitive and is stored outside
 the plugin files. Local development can still read the ignored `.env` beside the
 bundle.
 
-### Where configuration lives
+#### Where legacy configuration lives
 
 CodeBuddy does **not** prompt for `userConfig` values when a plugin is installed
 or enabled (verified against 2.142.0: the write path `savePluginOptions()` is
@@ -79,7 +143,7 @@ CodeBuddy ask for them and store them for you, or write them yourself:
 | sensitive (`app_secret`) | `~/.codebuddy/credentials.json` | `pluginSecrets["<plugin-id>"]` |
 
 `<plugin-id>` is `<plugin name>@<marketplace name>`, e.g.
-`codebuddy-lark-channel@codebuddy-lark-plugins`. CodeBuddy exports every stored
+`codebuddy-lark-channel@codebuddy-lark-plugin`. CodeBuddy exports every stored
 option to the MCP server process as `CODEBUDDY_PLUGIN_OPTION_<KEY>`, which is
 what the runtime reads.
 
@@ -87,7 +151,7 @@ what the runtime reads.
 // ~/.codebuddy/settings.json
 {
   "pluginConfigs": {
-    "codebuddy-lark-channel@codebuddy-lark-plugins": {
+    "codebuddy-lark-channel@codebuddy-lark-plugin": {
       "options": {
         "app_id": "cli_xxxxxxxxxxxxxxxx",
         "allowed_senders": "ou_xxxxxxxxxxxxxxxx",
@@ -105,7 +169,7 @@ what the runtime reads.
 // ~/.codebuddy/credentials.json   (chmod 600)
 {
   "pluginSecrets": {
-    "codebuddy-lark-channel@codebuddy-lark-plugins": {
+    "codebuddy-lark-channel@codebuddy-lark-plugin": {
       "app_secret": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
     }
   }
@@ -115,12 +179,10 @@ what the runtime reads.
 Options are read when the plugin loads, so restart CodeBuddy (or run
 `/reload-plugins`) afterwards.
 
-> `~/.codebuddy/.env` does **not** work for the plugin's MCP server: stdio MCP
-> servers only inherit `HOME`/`PATH`/`SHELL`/`TERM`/`USER`/`LOGNAME` plus the
-> `env` block declared in the plugin manifest. `LARK_*` variables only reach the
-> runtime when they are set in `plugin.json`'s `mcpServers.lark.env`, in a
-> `.mcp.json` server entry, or in the `.env` next to the bundle (local
-> development).
+> A stdio MCP child does not automatically inherit every shell variable, but
+> this plugin also reads `~/.codebuddy/.env` itself (see `loadDotenv()` in
+> `src/index.ts`). The shared `lark-channel.json` file takes precedence over
+> legacy App ID and Secret variables from any `.env` location.
 
 For local development, validate and load the plugin directory:
 
@@ -152,19 +214,19 @@ install it as a marketplace:
 
 ```bash
 codebuddy plugin marketplace add OWNER/REPOSITORY
-codebuddy plugin install codebuddy-lark-channel@codebuddy-lark-plugins
+codebuddy plugin install codebuddy-lark-channel@codebuddy-lark-plugin
 ```
 
 For a local publication test:
 
 ```bash
 codebuddy plugin marketplace add /absolute/path/to/codebuddy-lark-plugin
-codebuddy plugin install codebuddy-lark-channel@codebuddy-lark-plugins --scope local
+codebuddy plugin install codebuddy-lark-channel@codebuddy-lark-plugin --scope local
 ```
 
 After installation, run `/lark-setup` (provided by this plugin as
 `codebuddy-lark-channel:lark-setup`). It asks for the values below and writes
-them to the correct files:
+them to the shared bot file by default:
 
 - `app_id`
 - `app_secret` (sensitive)
@@ -174,11 +236,13 @@ them to the correct files:
 - `image_download`
 - `allow_all`
 
-The runtime receives these as `CODEBUDDY_PLUGIN_OPTION_*` environment variables.
-Explicit `LARK_*` variables and local `.env` values take precedence, which keeps
-development and installed-plugin workflows compatible.
+For the legacy settings-based flow, the runtime receives values as
+`CODEBUDDY_PLUGIN_OPTION_*` environment variables. Explicit `LARK_*` values
+take precedence when no shared bot file exists.
 
 You can alternatively load the channel directly as an MCP server.
+If the shared bot file exists, select a profile from it with `--lark-bot` in
+the server's `args` instead of repeating credentials in the `env` block.
 
 ### Direct MCP server in `~/.codebuddy/.mcp.json`
 
@@ -326,6 +390,8 @@ Note: a known esbuild packaging quirk can bundle `https-proxy-agent`'s ES6 class
 ```
 
 - `src/config.ts` — env config
+- `src/instance-config.ts` — selects a bot from the shared instance bindings
+- `src/local-bot-leader.ts` — keeps one local WebSocket owner per bot
 - `src/lark-bridge.ts` — Lark WS client, message parsing, image download, send
 - `src/channel-server.ts` — MCP/channel server + `reply` tool + permission relay
 - `src/index.ts` — entrypoint (loads `.env`, wires everything)

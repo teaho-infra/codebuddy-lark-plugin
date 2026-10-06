@@ -6,8 +6,61 @@ allowed-tools: Read, Edit, Write, Bash
 
 Configure the Lark/Feishu bot that this channel plugin connects to.
 
+## Recommended: shared multi-instance configuration
+
+By default, create or update `~/.codebuddy/lark-channel.json`. This single
+file maps CodeBuddy instances to bot profiles, including daemon workers and
+ordinary sessions. Ask the user for one value at a time:
+
+1. A short bot name, such as `work` or `daemon-bot`.
+2. `app_id`, `app_secret`, and `allowed_senders`; optionally ask for `domain`,
+   `group_chat_enabled`, `image_download`, and `allow_all`.
+3. Which instance should use it: `session_kinds` (`daemon`, `bg`, or
+   `interactive`), `session_ids` (set with `codebuddy --session-id ID`),
+   `session_names`, or an exact absolute `workspaces` path. A binding maps the
+   chosen value to the bot name. The user may add more bindings later.
+
+Read any existing file and merge into it. Preserve other bot profiles and
+bindings. Create the file with this shape, using actual JSON booleans:
+
+```json
+{
+  "version": 1,
+  "bots": {
+    "work": {
+      "app_id": "cli_...",
+      "app_secret": "...",
+      "allowed_senders": "ou_..."
+    }
+  },
+  "bindings": {
+    "session_ids": { "work-session": "work" }
+  }
+}
+```
+
+Use `$HOME` rather than a literal home path. If `CODEBUDDY_CONFIG_DIR` is set,
+put `lark-channel.json` there instead. Do not write credentials into
+this repository, an `.env`, or conversation output. After writing the file,
+run `chmod 600 <config-dir>/lark-channel.json` on macOS/Linux. Verify that
+the file parses as JSON, the chosen bot has non-empty `app_id` and
+`app_secret`, and the intended binding points to that bot. Print only bot
+names and binding names during verification, never secret values.
+
+Explain that an unmatched instance does not connect to a bot, and an App ID
+can have only one local connection at a time. The plugin must be reloaded
+after changing the file. `codebuddy daemon start` itself has no
+`--mcp-config` flag; use a `session_kinds.daemon` binding to select its bot.
+
+The legacy single-bot configuration below is for users who explicitly want
+to keep their existing `settings.json` / `credentials.json` setup. If the
+central JSON file exists, it takes precedence over those legacy values.
+
+## Legacy single-bot configuration
+
 CodeBuddy does **not** prompt for `userConfig` values on install (as of
-2.142.0), and the plugin's MCP server does **not** inherit `~/.codebuddy/.env`.
+2.142.0). The plugin can read `~/.codebuddy/.env` itself, but this legacy flow
+stores plugin options in CodeBuddy's own settings and credentials files.
 Credentials must be written to the two files CodeBuddy actually reads:
 
 - non-sensitive options → `~/.codebuddy/settings.json` under
@@ -28,7 +81,7 @@ The id is `<plugin name>@<marketplace name>`. Determine it in this order:
    marketplace whose `.codebuddy-plugin/plugin.json` declares
    `"name": "codebuddy-lark-channel"`. The id is
    `codebuddy-lark-channel@<that marketplace directory name>`.
-3. Only if both fail, use `codebuddy-lark-channel@codebuddy-lark-plugins`.
+3. Only if both fail, use `codebuddy-lark-channel@codebuddy-lark-plugin`.
 
 Use `$HOME` instead of a literal home path. If `CODEBUDDY_CONFIG_DIR` is set,
 read and write under that directory instead of `~/.codebuddy`.

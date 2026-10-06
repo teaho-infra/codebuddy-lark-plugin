@@ -10961,12 +10961,12 @@ var require_promisify = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     function promisify(fn) {
       return function(req, opts) {
-        return new Promise((resolve2, reject) => {
+        return new Promise((resolve3, reject) => {
           fn.call(this, req, opts, (err, rtn) => {
             if (err) {
               reject(err);
             } else {
-              resolve2(rtn);
+              resolve3(rtn);
             }
           });
         });
@@ -11170,7 +11170,7 @@ var require_parse_proxy_response = __commonJS({
     var debug_1 = __importDefault(require_src());
     var debug = debug_1.default("https-proxy-agent:parse-proxy-response");
     function parseProxyResponse(socket) {
-      return new Promise((resolve2, reject) => {
+      return new Promise((resolve3, reject) => {
         let buffersLength = 0;
         const buffers = [];
         function read() {
@@ -11210,7 +11210,7 @@ var require_parse_proxy_response = __commonJS({
           const firstLine = buffered.toString("ascii", 0, buffered.indexOf("\r\n"));
           const statusCode = +firstLine.split(" ")[1];
           debug("got proxy server response: %o", firstLine);
-          resolve2({
+          resolve3({
             statusCode,
             buffered
           });
@@ -11231,11 +11231,11 @@ var require_agent = __commonJS({
     "use strict";
     var __awaiter = exports2 && exports2.__awaiter || function(thisArg, _arguments, P, generator) {
       function adopt(value) {
-        return value instanceof P ? value : new P(function(resolve2) {
-          resolve2(value);
+        return value instanceof P ? value : new P(function(resolve3) {
+          resolve3(value);
         });
       }
-      return new (P || (P = Promise))(function(resolve2, reject) {
+      return new (P || (P = Promise))(function(resolve3, reject) {
         function fulfilled(value) {
           try {
             step(generator.next(value));
@@ -11251,7 +11251,7 @@ var require_agent = __commonJS({
           }
         }
         function step(result) {
-          result.done ? resolve2(result.value) : adopt(result.value).then(fulfilled, rejected);
+          result.done ? resolve3(result.value) : adopt(result.value).then(fulfilled, rejected);
         }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
       });
@@ -13537,10 +13537,10 @@ var require_axios = __commonJS({
         this.__CANCEL__ = true;
       }
     };
-    function settle(resolve2, reject, response) {
+    function settle(resolve3, reject, response) {
       const validateStatus = response.config.validateStatus;
       if (!response.status || !validateStatus || validateStatus(response.status)) {
-        resolve2(response);
+        resolve3(response);
       } else {
         reject(new AxiosError("Request failed with status code " + response.status, response.status >= 400 && response.status < 500 ? AxiosError.ERR_BAD_REQUEST : AxiosError.ERR_BAD_RESPONSE, response.config, response.request, response));
       }
@@ -14666,7 +14666,7 @@ var require_axios = __commonJS({
     }
     var isHttpAdapterSupported = typeof process !== "undefined" && utils$1.kindOf(process) === "process";
     var wrapAsync = (asyncExecutor) => {
-      return new Promise((resolve2, reject) => {
+      return new Promise((resolve3, reject) => {
         let onDone;
         let isDone;
         const done = (value, isRejected) => {
@@ -14676,7 +14676,7 @@ var require_axios = __commonJS({
         };
         const _resolve = (value) => {
           done(value);
-          resolve2(value);
+          resolve3(value);
         };
         const _reject = (reason) => {
           done(reason, true);
@@ -14737,7 +14737,7 @@ var require_axios = __commonJS({
       }
     };
     var httpAdapter = isHttpAdapterSupported && function httpAdapter2(config2) {
-      return wrapAsync(async function dispatchHttpRequest(resolve2, reject, onDone) {
+      return wrapAsync(async function dispatchHttpRequest(resolve3, reject, onDone) {
         const own2 = (key) => utils$1.getSafeProp(config2, key);
         const transitional = own2("transitional") || transitionalDefaults;
         let data = own2("data");
@@ -14854,7 +14854,7 @@ var require_axios = __commonJS({
           }
           let convertedData;
           if (method !== "GET") {
-            return settle(resolve2, reject, {
+            return settle(resolve3, reject, {
               status: 405,
               statusText: "method not allowed",
               headers: {},
@@ -14876,7 +14876,7 @@ var require_axios = __commonJS({
           } else if (responseType === "stream") {
             convertedData = stream.Readable.from(convertedData);
           }
-          return settle(resolve2, reject, {
+          return settle(resolve3, reject, {
             data: convertedData,
             status: 200,
             statusText: "OK",
@@ -15148,7 +15148,7 @@ var require_axios = __commonJS({
               });
             }
             response.data = responseStream;
-            settle(resolve2, reject, response);
+            settle(resolve3, reject, response);
           } else {
             const responseBuffer = [];
             let totalResponseBytes = 0;
@@ -15186,7 +15186,7 @@ var require_axios = __commonJS({
               } catch (err) {
                 return reject(AxiosError.from(err, null, config2, response.request, response));
               }
-              settle(resolve2, reject, response);
+              settle(resolve3, reject, response);
             });
           }
           abortEmitter.once("abort", (err) => {
@@ -15523,7 +15523,7 @@ var require_axios = __commonJS({
     }
     var isXHRAdapterSupported = typeof XMLHttpRequest !== "undefined";
     var xhrAdapter = isXHRAdapterSupported && function(config2) {
-      return new Promise(function dispatchXhrRequest(resolve2, reject) {
+      return new Promise(function dispatchXhrRequest(resolve3, reject) {
         const _config = resolveConfig(config2);
         let requestData = _config.data;
         const requestHeaders = AxiosHeaders.from(_config.headers).normalize();
@@ -15559,7 +15559,7 @@ var require_axios = __commonJS({
             request
           };
           settle(function _resolve(value) {
-            resolve2(value);
+            resolve3(value);
             done();
           }, function _reject(err) {
             reject(err);
@@ -16069,8 +16069,8 @@ var require_axios = __commonJS({
             }
           }
           !isStreamResponse && unsubscribe && unsubscribe();
-          return await new Promise((resolve2, reject) => {
-            settle(resolve2, reject, {
+          return await new Promise((resolve3, reject) => {
+            settle(resolve3, reject, {
               data: responseData,
               headers: AxiosHeaders.from(response.headers),
               status: response.status,
@@ -16508,8 +16508,8 @@ var require_axios = __commonJS({
           throw new TypeError("executor must be a function.");
         }
         let resolvePromise;
-        this.promise = new Promise(function promiseExecutor(resolve2) {
-          resolvePromise = resolve2;
+        this.promise = new Promise(function promiseExecutor(resolve3) {
+          resolvePromise = resolve3;
         });
         const token = this;
         this.promise.then((cancel) => {
@@ -16522,9 +16522,9 @@ var require_axios = __commonJS({
         });
         this.promise.then = (onfulfilled) => {
           let _resolve;
-          const promise2 = new Promise((resolve2) => {
-            token.subscribe(resolve2);
-            _resolve = resolve2;
+          const promise2 = new Promise((resolve3) => {
+            token.subscribe(resolve3);
+            _resolve = resolve3;
           }).then(onfulfilled);
           promise2.cancel = function reject() {
             token.unsubscribe(_resolve);
@@ -22346,7 +22346,7 @@ var require_websocket = __commonJS({
     var http = require("http");
     var net = require("net");
     var tls = require("tls");
-    var { randomBytes, createHash } = require("crypto");
+    var { randomBytes, createHash: createHash2 } = require("crypto");
     var { Duplex, Readable } = require("stream");
     var { URL: URL2 } = require("url");
     var PerMessageDeflate = require_permessage_deflate();
@@ -23014,7 +23014,7 @@ var require_websocket = __commonJS({
           abortHandshake(websocket, socket, "Invalid Upgrade header");
           return;
         }
-        const digest = createHash("sha1").update(key + GUID).digest("base64");
+        const digest = createHash2("sha1").update(key + GUID).digest("base64");
         if (res.headers["sec-websocket-accept"] !== digest) {
           abortHandshake(websocket, socket, "Invalid Sec-WebSocket-Accept header");
           return;
@@ -23383,7 +23383,7 @@ var require_websocket_server = __commonJS({
     var EventEmitter = require("events");
     var http = require("http");
     var { Duplex } = require("stream");
-    var { createHash } = require("crypto");
+    var { createHash: createHash2 } = require("crypto");
     var extension = require_extension();
     var PerMessageDeflate = require_permessage_deflate();
     var subprotocol = require_subprotocol();
@@ -23690,7 +23690,7 @@ var require_websocket_server = __commonJS({
           );
         }
         if (this._state > RUNNING) return abortHandshake(socket, 503);
-        const digest = createHash("sha1").update(key + GUID).digest("base64");
+        const digest = createHash2("sha1").update(key + GUID).digest("base64");
         const headers = [
           "HTTP/1.1 101 Switching Protocols",
           "Upgrade: websocket",
@@ -23811,7 +23811,7 @@ var require_aspromise = __commonJS({
       var params = new Array(arguments.length - 1), offset = 0, index = 2, pending = true;
       while (index < arguments.length)
         params[offset++] = arguments[index++];
-      return new Promise(function executor(resolve2, reject) {
+      return new Promise(function executor(resolve3, reject) {
         params[offset] = function callback(err) {
           if (pending) {
             pending = false;
@@ -23821,7 +23821,7 @@ var require_aspromise = __commonJS({
               var params2 = new Array(arguments.length - 1), offset2 = 0;
               while (offset2 < params2.length)
                 params2[offset2++] = arguments[offset2];
-              resolve2.apply(null, params2);
+              resolve3.apply(null, params2);
             }
           }
         };
@@ -26235,11 +26235,11 @@ var require_lib2 = __commonJS({
     }
     function __awaiter(thisArg, _arguments, P, generator) {
       function adopt(value) {
-        return value instanceof P ? value : new P(function(resolve2) {
-          resolve2(value);
+        return value instanceof P ? value : new P(function(resolve3) {
+          resolve3(value);
         });
       }
-      return new (P || (P = Promise))(function(resolve2, reject) {
+      return new (P || (P = Promise))(function(resolve3, reject) {
         function fulfilled(value) {
           try {
             step(generator.next(value));
@@ -26255,7 +26255,7 @@ var require_lib2 = __commonJS({
           }
         }
         function step(result) {
-          result.done ? resolve2(result.value) : adopt(result.value).then(fulfilled, rejected);
+          result.done ? resolve3(result.value) : adopt(result.value).then(fulfilled, rejected);
         }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
       });
@@ -26315,14 +26315,14 @@ var require_lib2 = __commonJS({
       }, i);
       function verb(n) {
         i[n] = o[n] && function(v) {
-          return new Promise(function(resolve2, reject) {
-            v = o[n](v), settle(resolve2, reject, v.done, v.value);
+          return new Promise(function(resolve3, reject) {
+            v = o[n](v), settle(resolve3, reject, v.done, v.value);
           });
         };
       }
-      function settle(resolve2, reject, d, v) {
+      function settle(resolve3, reject, d, v) {
         Promise.resolve(v).then(function(v2) {
-          resolve2({ value: v2, done: d });
+          resolve3({ value: v2, done: d });
         }, reject);
       }
     }
@@ -26669,10 +26669,10 @@ var require_lib2 = __commonJS({
               return {
                 writeFile: (filePath) => __awaiter(this, void 0, void 0, function* () {
                   checkIsReadable();
-                  return new Promise((resolve2, reject) => {
+                  return new Promise((resolve3, reject) => {
                     const writableStream = fs__default["default"].createWriteStream(filePath);
                     writableStream.on("finish", () => {
-                      resolve2(filePath);
+                      resolve3(filePath);
                     });
                     writableStream.on("error", (e) => {
                       reject(e);
@@ -26852,10 +26852,10 @@ var require_lib2 = __commonJS({
               return {
                 writeFile: (filePath) => __awaiter(this, void 0, void 0, function* () {
                   checkIsReadable();
-                  return new Promise((resolve2, reject) => {
+                  return new Promise((resolve3, reject) => {
                     const writableStream = fs__default["default"].createWriteStream(filePath);
                     writableStream.on("finish", () => {
-                      resolve2(filePath);
+                      resolve3(filePath);
                     });
                     writableStream.on("error", (e) => {
                       reject(e);
@@ -27188,10 +27188,10 @@ var require_lib2 = __commonJS({
                 return {
                   writeFile: (filePath) => __awaiter(this, void 0, void 0, function* () {
                     checkIsReadable();
-                    return new Promise((resolve2, reject) => {
+                    return new Promise((resolve3, reject) => {
                       const writableStream = fs__default["default"].createWriteStream(filePath);
                       writableStream.on("finish", () => {
-                        resolve2(filePath);
+                        resolve3(filePath);
                       });
                       writableStream.on("error", (e) => {
                         reject(e);
@@ -27373,10 +27373,10 @@ var require_lib2 = __commonJS({
                 return {
                   writeFile: (filePath) => __awaiter(this, void 0, void 0, function* () {
                     checkIsReadable();
-                    return new Promise((resolve2, reject) => {
+                    return new Promise((resolve3, reject) => {
                       const writableStream = fs__default["default"].createWriteStream(filePath);
                       writableStream.on("finish", () => {
-                        resolve2(filePath);
+                        resolve3(filePath);
                       });
                       writableStream.on("error", (e) => {
                         reject(e);
@@ -36216,10 +36216,10 @@ var require_lib2 = __commonJS({
               return {
                 writeFile: (filePath) => __awaiter(this, void 0, void 0, function* () {
                   checkIsReadable();
-                  return new Promise((resolve2, reject) => {
+                  return new Promise((resolve3, reject) => {
                     const writableStream = fs__default["default"].createWriteStream(filePath);
                     writableStream.on("finish", () => {
-                      resolve2(filePath);
+                      resolve3(filePath);
                     });
                     writableStream.on("error", (e) => {
                       reject(e);
@@ -37398,10 +37398,10 @@ var require_lib2 = __commonJS({
                 return {
                   writeFile: (filePath) => __awaiter(this, void 0, void 0, function* () {
                     checkIsReadable();
-                    return new Promise((resolve2, reject) => {
+                    return new Promise((resolve3, reject) => {
                       const writableStream = fs__default["default"].createWriteStream(filePath);
                       writableStream.on("finish", () => {
-                        resolve2(filePath);
+                        resolve3(filePath);
                       });
                       writableStream.on("error", (e) => {
                         reject(e);
@@ -39604,10 +39604,10 @@ var require_lib2 = __commonJS({
               return {
                 writeFile: (filePath) => __awaiter(this, void 0, void 0, function* () {
                   checkIsReadable();
-                  return new Promise((resolve2, reject) => {
+                  return new Promise((resolve3, reject) => {
                     const writableStream = fs__default["default"].createWriteStream(filePath);
                     writableStream.on("finish", () => {
-                      resolve2(filePath);
+                      resolve3(filePath);
                     });
                     writableStream.on("error", (e) => {
                       reject(e);
@@ -40130,10 +40130,10 @@ var require_lib2 = __commonJS({
                 return {
                   writeFile: (filePath) => __awaiter(this, void 0, void 0, function* () {
                     checkIsReadable();
-                    return new Promise((resolve2, reject) => {
+                    return new Promise((resolve3, reject) => {
                       const writableStream = fs__default["default"].createWriteStream(filePath);
                       writableStream.on("finish", () => {
-                        resolve2(filePath);
+                        resolve3(filePath);
                       });
                       writableStream.on("error", (e) => {
                         reject(e);
@@ -44151,10 +44151,10 @@ var require_lib2 = __commonJS({
                 return {
                   writeFile: (filePath) => __awaiter(this, void 0, void 0, function* () {
                     checkIsReadable();
-                    return new Promise((resolve2, reject) => {
+                    return new Promise((resolve3, reject) => {
                       const writableStream = fs__default["default"].createWriteStream(filePath);
                       writableStream.on("finish", () => {
-                        resolve2(filePath);
+                        resolve3(filePath);
                       });
                       writableStream.on("error", (e) => {
                         reject(e);
@@ -55124,10 +55124,10 @@ var require_lib2 = __commonJS({
               return {
                 writeFile: (filePath) => __awaiter(this, void 0, void 0, function* () {
                   checkIsReadable();
-                  return new Promise((resolve2, reject) => {
+                  return new Promise((resolve3, reject) => {
                     const writableStream = fs__default["default"].createWriteStream(filePath);
                     writableStream.on("finish", () => {
-                      resolve2(filePath);
+                      resolve3(filePath);
                     });
                     writableStream.on("error", (e) => {
                       reject(e);
@@ -57881,10 +57881,10 @@ var require_lib2 = __commonJS({
                 return {
                   writeFile: (filePath) => __awaiter(this, void 0, void 0, function* () {
                     checkIsReadable();
-                    return new Promise((resolve2, reject) => {
+                    return new Promise((resolve3, reject) => {
                       const writableStream = fs__default["default"].createWriteStream(filePath);
                       writableStream.on("finish", () => {
-                        resolve2(filePath);
+                        resolve3(filePath);
                       });
                       writableStream.on("error", (e) => {
                         reject(e);
@@ -61320,10 +61320,10 @@ var require_lib2 = __commonJS({
                 return {
                   writeFile: (filePath) => __awaiter(this, void 0, void 0, function* () {
                     checkIsReadable();
-                    return new Promise((resolve2, reject) => {
+                    return new Promise((resolve3, reject) => {
                       const writableStream = fs__default["default"].createWriteStream(filePath);
                       writableStream.on("finish", () => {
-                        resolve2(filePath);
+                        resolve3(filePath);
                       });
                       writableStream.on("error", (e) => {
                         reject(e);
@@ -67945,10 +67945,10 @@ var require_lib2 = __commonJS({
               return {
                 writeFile: (filePath) => __awaiter(this, void 0, void 0, function* () {
                   checkIsReadable();
-                  return new Promise((resolve2, reject) => {
+                  return new Promise((resolve3, reject) => {
                     const writableStream = fs__default["default"].createWriteStream(filePath);
                     writableStream.on("finish", () => {
-                      resolve2(filePath);
+                      resolve3(filePath);
                     });
                     writableStream.on("error", (e) => {
                       reject(e);
@@ -68197,10 +68197,10 @@ var require_lib2 = __commonJS({
               return {
                 writeFile: (filePath) => __awaiter(this, void 0, void 0, function* () {
                   checkIsReadable();
-                  return new Promise((resolve2, reject) => {
+                  return new Promise((resolve3, reject) => {
                     const writableStream = fs__default["default"].createWriteStream(filePath);
                     writableStream.on("finish", () => {
-                      resolve2(filePath);
+                      resolve3(filePath);
                     });
                     writableStream.on("error", (e) => {
                       reject(e);
@@ -68818,10 +68818,10 @@ var require_lib2 = __commonJS({
               return {
                 writeFile: (filePath) => __awaiter(this, void 0, void 0, function* () {
                   checkIsReadable();
-                  return new Promise((resolve2, reject) => {
+                  return new Promise((resolve3, reject) => {
                     const writableStream = fs__default["default"].createWriteStream(filePath);
                     writableStream.on("finish", () => {
-                      resolve2(filePath);
+                      resolve3(filePath);
                     });
                     writableStream.on("error", (e) => {
                       reject(e);
@@ -69764,10 +69764,10 @@ var require_lib2 = __commonJS({
                 return {
                   writeFile: (filePath) => __awaiter(this, void 0, void 0, function* () {
                     checkIsReadable();
-                    return new Promise((resolve2, reject) => {
+                    return new Promise((resolve3, reject) => {
                       const writableStream = fs__default["default"].createWriteStream(filePath);
                       writableStream.on("finish", () => {
-                        resolve2(filePath);
+                        resolve3(filePath);
                       });
                       writableStream.on("error", (e) => {
                         reject(e);
@@ -70016,10 +70016,10 @@ var require_lib2 = __commonJS({
                 return {
                   writeFile: (filePath) => __awaiter(this, void 0, void 0, function* () {
                     checkIsReadable();
-                    return new Promise((resolve2, reject) => {
+                    return new Promise((resolve3, reject) => {
                       const writableStream = fs__default["default"].createWriteStream(filePath);
                       writableStream.on("finish", () => {
-                        resolve2(filePath);
+                        resolve3(filePath);
                       });
                       writableStream.on("error", (e) => {
                         reject(e);
@@ -70643,10 +70643,10 @@ var require_lib2 = __commonJS({
                 return {
                   writeFile: (filePath) => __awaiter(this, void 0, void 0, function* () {
                     checkIsReadable();
-                    return new Promise((resolve2, reject) => {
+                    return new Promise((resolve3, reject) => {
                       const writableStream = fs__default["default"].createWriteStream(filePath);
                       writableStream.on("finish", () => {
-                        resolve2(filePath);
+                        resolve3(filePath);
                       });
                       writableStream.on("error", (e) => {
                         reject(e);
@@ -71482,10 +71482,10 @@ var require_lib2 = __commonJS({
               return {
                 writeFile: (filePath) => __awaiter(this, void 0, void 0, function* () {
                   checkIsReadable();
-                  return new Promise((resolve2, reject) => {
+                  return new Promise((resolve3, reject) => {
                     const writableStream = fs__default["default"].createWriteStream(filePath);
                     writableStream.on("finish", () => {
-                      resolve2(filePath);
+                      resolve3(filePath);
                     });
                     writableStream.on("error", (e) => {
                       reject(e);
@@ -71618,10 +71618,10 @@ var require_lib2 = __commonJS({
                 return {
                   writeFile: (filePath) => __awaiter(this, void 0, void 0, function* () {
                     checkIsReadable();
-                    return new Promise((resolve2, reject) => {
+                    return new Promise((resolve3, reject) => {
                       const writableStream = fs__default["default"].createWriteStream(filePath);
                       writableStream.on("finish", () => {
-                        resolve2(filePath);
+                        resolve3(filePath);
                       });
                       writableStream.on("error", (e) => {
                         reject(e);
@@ -72453,10 +72453,10 @@ var require_lib2 = __commonJS({
               return {
                 writeFile: (filePath) => __awaiter(this, void 0, void 0, function* () {
                   checkIsReadable();
-                  return new Promise((resolve2, reject) => {
+                  return new Promise((resolve3, reject) => {
                     const writableStream = fs__default["default"].createWriteStream(filePath);
                     writableStream.on("finish", () => {
-                      resolve2(filePath);
+                      resolve3(filePath);
                     });
                     writableStream.on("error", (e) => {
                       reject(e);
@@ -72851,10 +72851,10 @@ var require_lib2 = __commonJS({
               return {
                 writeFile: (filePath) => __awaiter(this, void 0, void 0, function* () {
                   checkIsReadable();
-                  return new Promise((resolve2, reject) => {
+                  return new Promise((resolve3, reject) => {
                     const writableStream = fs__default["default"].createWriteStream(filePath);
                     writableStream.on("finish", () => {
-                      resolve2(filePath);
+                      resolve3(filePath);
                     });
                     writableStream.on("error", (e) => {
                       reject(e);
@@ -73891,10 +73891,10 @@ var require_lib2 = __commonJS({
                 return {
                   writeFile: (filePath) => __awaiter(this, void 0, void 0, function* () {
                     checkIsReadable();
-                    return new Promise((resolve2, reject) => {
+                    return new Promise((resolve3, reject) => {
                       const writableStream = fs__default["default"].createWriteStream(filePath);
                       writableStream.on("finish", () => {
-                        resolve2(filePath);
+                        resolve3(filePath);
                       });
                       writableStream.on("error", (e) => {
                         reject(e);
@@ -74293,10 +74293,10 @@ var require_lib2 = __commonJS({
                 return {
                   writeFile: (filePath) => __awaiter(this, void 0, void 0, function* () {
                     checkIsReadable();
-                    return new Promise((resolve2, reject) => {
+                    return new Promise((resolve3, reject) => {
                       const writableStream = fs__default["default"].createWriteStream(filePath);
                       writableStream.on("finish", () => {
-                        resolve2(filePath);
+                        resolve3(filePath);
                       });
                       writableStream.on("error", (e) => {
                         reject(e);
@@ -88992,10 +88992,10 @@ var require_lib2 = __commonJS({
               return {
                 writeFile: (filePath) => __awaiter(this, void 0, void 0, function* () {
                   checkIsReadable();
-                  return new Promise((resolve2, reject) => {
+                  return new Promise((resolve3, reject) => {
                     const writableStream = fs__default["default"].createWriteStream(filePath);
                     writableStream.on("finish", () => {
-                      resolve2(filePath);
+                      resolve3(filePath);
                     });
                     writableStream.on("error", (e) => {
                       reject(e);
@@ -89230,10 +89230,10 @@ var require_lib2 = __commonJS({
               return {
                 writeFile: (filePath) => __awaiter(this, void 0, void 0, function* () {
                   checkIsReadable();
-                  return new Promise((resolve2, reject) => {
+                  return new Promise((resolve3, reject) => {
                     const writableStream = fs__default["default"].createWriteStream(filePath);
                     writableStream.on("finish", () => {
-                      resolve2(filePath);
+                      resolve3(filePath);
                     });
                     writableStream.on("error", (e) => {
                       reject(e);
@@ -89315,10 +89315,10 @@ var require_lib2 = __commonJS({
               return {
                 writeFile: (filePath) => __awaiter(this, void 0, void 0, function* () {
                   checkIsReadable();
-                  return new Promise((resolve2, reject) => {
+                  return new Promise((resolve3, reject) => {
                     const writableStream = fs__default["default"].createWriteStream(filePath);
                     writableStream.on("finish", () => {
-                      resolve2(filePath);
+                      resolve3(filePath);
                     });
                     writableStream.on("error", (e) => {
                       reject(e);
@@ -91137,10 +91137,10 @@ var require_lib2 = __commonJS({
                 return {
                   writeFile: (filePath) => __awaiter(this, void 0, void 0, function* () {
                     checkIsReadable();
-                    return new Promise((resolve2, reject) => {
+                    return new Promise((resolve3, reject) => {
                       const writableStream = fs__default["default"].createWriteStream(filePath);
                       writableStream.on("finish", () => {
-                        resolve2(filePath);
+                        resolve3(filePath);
                       });
                       writableStream.on("error", (e) => {
                         reject(e);
@@ -91377,10 +91377,10 @@ var require_lib2 = __commonJS({
                 return {
                   writeFile: (filePath) => __awaiter(this, void 0, void 0, function* () {
                     checkIsReadable();
-                    return new Promise((resolve2, reject) => {
+                    return new Promise((resolve3, reject) => {
                       const writableStream = fs__default["default"].createWriteStream(filePath);
                       writableStream.on("finish", () => {
-                        resolve2(filePath);
+                        resolve3(filePath);
                       });
                       writableStream.on("error", (e) => {
                         reject(e);
@@ -91462,10 +91462,10 @@ var require_lib2 = __commonJS({
                 return {
                   writeFile: (filePath) => __awaiter(this, void 0, void 0, function* () {
                     checkIsReadable();
-                    return new Promise((resolve2, reject) => {
+                    return new Promise((resolve3, reject) => {
                       const writableStream = fs__default["default"].createWriteStream(filePath);
                       writableStream.on("finish", () => {
-                        resolve2(filePath);
+                        resolve3(filePath);
                       });
                       writableStream.on("error", (e) => {
                         reject(e);
@@ -91967,10 +91967,10 @@ var require_lib2 = __commonJS({
                 return {
                   writeFile: (filePath) => __awaiter(this, void 0, void 0, function* () {
                     checkIsReadable();
-                    return new Promise((resolve2, reject) => {
+                    return new Promise((resolve3, reject) => {
                       const writableStream = fs__default["default"].createWriteStream(filePath);
                       writableStream.on("finish", () => {
-                        resolve2(filePath);
+                        resolve3(filePath);
                       });
                       writableStream.on("error", (e) => {
                         reject(e);
@@ -99141,10 +99141,10 @@ var require_lib2 = __commonJS({
                 return {
                   writeFile: (filePath) => __awaiter(this, void 0, void 0, function* () {
                     checkIsReadable();
-                    return new Promise((resolve2, reject) => {
+                    return new Promise((resolve3, reject) => {
                       const writableStream = fs__default["default"].createWriteStream(filePath);
                       writableStream.on("finish", () => {
-                        resolve2(filePath);
+                        resolve3(filePath);
                       });
                       writableStream.on("error", (e) => {
                         reject(e);
@@ -113804,10 +113804,10 @@ var require_lib2 = __commonJS({
               return {
                 writeFile: (filePath) => __awaiter(this, void 0, void 0, function* () {
                   checkIsReadable();
-                  return new Promise((resolve2, reject) => {
+                  return new Promise((resolve3, reject) => {
                     const writableStream = fs__default["default"].createWriteStream(filePath);
                     writableStream.on("finish", () => {
-                      resolve2(filePath);
+                      resolve3(filePath);
                     });
                     writableStream.on("error", (e) => {
                       reject(e);
@@ -117135,10 +117135,10 @@ var require_lib2 = __commonJS({
                 return {
                   writeFile: (filePath) => __awaiter(this, void 0, void 0, function* () {
                     checkIsReadable();
-                    return new Promise((resolve2, reject) => {
+                    return new Promise((resolve3, reject) => {
                       const writableStream = fs__default["default"].createWriteStream(filePath);
                       writableStream.on("finish", () => {
-                        resolve2(filePath);
+                        resolve3(filePath);
                       });
                       writableStream.on("error", (e) => {
                         reject(e);
@@ -120072,7 +120072,7 @@ var require_lib2 = __commonJS({
         });
       }
     };
-    var pickRequestData = (req) => new Promise((resolve2) => {
+    var pickRequestData = (req) => new Promise((resolve3) => {
       let chunks = "";
       req.on("data", (chunk) => {
         chunks += chunk;
@@ -120080,9 +120080,9 @@ var require_lib2 = __commonJS({
       req.on("end", () => {
         try {
           const data = JSON.parse(chunks);
-          resolve2(data);
+          resolve3(data);
         } catch (e) {
-          resolve2("");
+          resolve3("");
         }
       });
     });
@@ -120971,7 +120971,7 @@ var require_lib2 = __commonJS({
         if (!wsInstance) {
           return Promise.resolve(false);
         }
-        return new Promise((resolve2) => {
+        return new Promise((resolve3) => {
           let settled = false;
           let timer;
           const settleOnce = (ok) => {
@@ -120980,7 +120980,7 @@ var require_lib2 = __commonJS({
             settled = true;
             if (timer)
               clearTimeout(timer);
-            resolve2(ok);
+            resolve3(ok);
           };
           if (this.handshakeTimeoutMs && this.handshakeTimeoutMs > 0) {
             timer = setTimeout(() => {
@@ -121422,7 +121422,7 @@ var require_lib2 = __commonJS({
             throw EExecStatus.ERROR;
           }
           const polling = () => __awaiter(this, void 0, void 0, function* () {
-            return new Promise((resolve2) => {
+            return new Promise((resolve3) => {
               setTimeout(() => __awaiter(this, void 0, void 0, function* () {
                 var _a4, _b2;
                 const runStatusInfo = yield this.client.aily.v1.ailySessionRun.get({
@@ -121432,7 +121432,7 @@ var require_lib2 = __commonJS({
                   }
                 }, options);
                 if (!(runStatusInfo.code === 0 && runStatusInfo.data)) {
-                  resolve2(3);
+                  resolve3(3);
                   return;
                 }
                 const status = (_b2 = (_a4 = runStatusInfo.data) === null || _a4 === void 0 ? void 0 : _a4.run) === null || _b2 === void 0 ? void 0 : _b2.status;
@@ -121441,18 +121441,18 @@ var require_lib2 = __commonJS({
                   case "IN_PROGRESS":
                     yield (() => __awaiter(this, void 0, void 0, function* () {
                       const ret = yield polling();
-                      resolve2(ret);
+                      resolve3(ret);
                     }))();
                   case "COMPLETED":
-                    resolve2(EExecStatus.SUCCESS);
+                    resolve3(EExecStatus.SUCCESS);
                   case "EXPIRED":
-                    resolve2(EExecStatus.EXPIRED);
+                    resolve3(EExecStatus.EXPIRED);
                   case "CANCELLED":
-                    resolve2(EExecStatus.CANCELLED);
+                    resolve3(EExecStatus.CANCELLED);
                   case "FAILED":
-                    resolve2(EExecStatus.FAILED);
+                    resolve3(EExecStatus.FAILED);
                   default:
-                    resolve2(EExecStatus.OTHER);
+                    resolve3(EExecStatus.OTHER);
                 }
               }), 500);
             });
@@ -121723,7 +121723,7 @@ var require_lib2 = __commonJS({
       });
     }
     function startPolling(ctx) {
-      return new Promise((resolve2, reject) => {
+      return new Promise((resolve3, reject) => {
         var _a3, _b;
         let { baseUrl, interval } = ctx;
         let domainSwitched = false;
@@ -121769,7 +121769,7 @@ var require_lib2 = __commonJS({
             }
             if (pollRes.client_id && pollRes.client_secret) {
               cleanup();
-              resolve2({
+              resolve3({
                 client_id: pollRes.client_id,
                 client_secret: pollRes.client_secret,
                 user_info: pollRes.user_info
@@ -124647,7 +124647,7 @@ ${lines.join("\n")}
        * corresponding public events.
        */
       connectWebSocket(timeoutMs) {
-        return new Promise((resolve2, reject) => {
+        return new Promise((resolve3, reject) => {
           var _a3;
           let settled = false;
           const timer = setTimeout(() => {
@@ -124674,7 +124674,7 @@ ${lines.join("\n")}
                 return;
               settled = true;
               clearTimeout(timer);
-              resolve2();
+              resolve3();
             },
             onError: (err) => {
               if (settled)
@@ -125067,12 +125067,12 @@ ${lines.join("\n")}
       });
     }
     function readableToBuffer(stream) {
-      return new Promise((resolve2, reject) => {
+      return new Promise((resolve3, reject) => {
         const chunks = [];
         stream.on("data", (chunk) => {
           chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
         });
-        stream.on("end", () => resolve2(Buffer.concat(chunks)));
+        stream.on("end", () => resolve3(Buffer.concat(chunks)));
         stream.on("error", reject);
       });
     }
@@ -128075,7 +128075,7 @@ var require_compile = __commonJS({
       const schOrFunc = root.refs[ref];
       if (schOrFunc)
         return schOrFunc;
-      let _sch = resolve2.call(this, root, ref);
+      let _sch = resolve3.call(this, root, ref);
       if (_sch === void 0) {
         const schema = (_a3 = root.localRefs) === null || _a3 === void 0 ? void 0 : _a3[ref];
         const { schemaId } = this.opts;
@@ -128102,7 +128102,7 @@ var require_compile = __commonJS({
     function sameSchemaEnv(s1, s2) {
       return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
     }
-    function resolve2(root, ref) {
+    function resolve3(root, ref) {
       let sch;
       while (typeof (sch = this.refs[ref]) == "string")
         ref = sch;
@@ -128733,7 +128733,7 @@ var require_fast_uri = __commonJS({
       }
       return uri;
     }
-    function resolve2(baseURI, relativeURI, options) {
+    function resolve3(baseURI, relativeURI, options) {
       const schemelessOptions = options ? Object.assign({ scheme: "null" }, options) : { scheme: "null" };
       const { parsed: baseParsed, malformedAuthorityOrPort: baseMalformed } = parseWithStatus(baseURI, schemelessOptions);
       const { parsed: relativeParsed, malformedAuthorityOrPort: relativeMalformed } = parseWithStatus(relativeURI, schemelessOptions);
@@ -129017,7 +129017,7 @@ var require_fast_uri = __commonJS({
     var fastUri = {
       SCHEMES,
       normalize,
-      resolve: resolve2,
+      resolve: resolve3,
       resolveComponent,
       equal,
       serialize,
@@ -132006,6 +132006,11 @@ var require_dist2 = __commonJS({
   }
 });
 
+// src/instance-config.ts
+var import_promises = require("node:fs/promises");
+var import_node_os = require("node:os");
+var import_node_path = require("node:path");
+
 // src/config.ts
 function parseList(value) {
   if (!value) return [];
@@ -132014,6 +132019,14 @@ function parseList(value) {
 function bool(value, defaultValue = false) {
   if (value === void 0) return defaultValue;
   return ["1", "true", "yes", "on"].includes(value.toLowerCase());
+}
+function integerInRange(value, name, min, max) {
+  if (value === void 0 || value === "") return void 0;
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < min || parsed > max) {
+    throw new Error(`${name} must be an integer from ${min} to ${max}`);
+  }
+  return parsed;
 }
 function loadConfig(env = process.env) {
   const appId = env.LARK_APP_ID || env.FEISHU_APP_ID || env.CODEBUDDY_PLUGIN_OPTION_APP_ID || "";
@@ -132042,15 +132055,223 @@ function loadConfig(env = process.env) {
       env.LARK_IMAGE_DOWNLOAD || env.CODEBUDDY_PLUGIN_OPTION_IMAGE_DOWNLOAD,
       true
     ),
-    mediaDir: env.LARK_MEDIA_DIR || "./.lark-media"
+    mediaDir: env.LARK_MEDIA_DIR || "./.lark-media",
+    instancePort: integerInRange(
+      env.LARK_INSTANCE_PORT || env.CODEBUDDY_PLUGIN_OPTION_INSTANCE_PORT,
+      "LARK_INSTANCE_PORT",
+      1,
+      65535
+    ),
+    instanceRetryMs: integerInRange(
+      env.LARK_INSTANCE_RETRY_MS || env.CODEBUDDY_PLUGIN_OPTION_INSTANCE_RETRY_MS,
+      "LARK_INSTANCE_RETRY_MS",
+      100,
+      6e4
+    ) ?? 2e3
   };
 }
+
+// src/instance-config.ts
+function cliValue(argv, flag) {
+  const index = argv.indexOf(flag);
+  if (index >= 0) {
+    if (!argv[index + 1] || argv[index + 1].startsWith("--")) {
+      throw new Error(`${flag} requires a value`);
+    }
+    return argv[index + 1];
+  }
+  const assignment = argv.find((arg) => arg.startsWith(`${flag}=`));
+  return assignment?.slice(flag.length + 1);
+}
+function record(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+function parseConfig(raw, path) {
+  let value;
+  try {
+    value = JSON.parse(raw);
+  } catch (err) {
+    throw new Error(`Invalid JSON in ${path}: ${err.message}`);
+  }
+  if (!record(value) || value.version !== 1 || !record(value.bots)) {
+    throw new Error(`${path} must contain version: 1 and a bots object`);
+  }
+  if (value.bindings !== void 0 && !record(value.bindings)) {
+    throw new Error(`${path}: bindings must be an object`);
+  }
+  return value;
+}
+function selectBot(file2, env, argv, cwd) {
+  const explicit = cliValue(argv, "--lark-bot") || env.LARK_BOT || env.CODEBUDDY_PLUGIN_OPTION_BOT;
+  if (explicit) return { botName: explicit, source: "startup option" };
+  const bindings = file2.bindings || {};
+  const sessionId = env.LARK_INSTANCE_ID || env.CODEBUDDY_PLUGIN_OPTION_INSTANCE_ID || env.CODEBUDDY_SESSION_ID;
+  if (sessionId && bindings.session_ids?.[sessionId]) {
+    return { botName: bindings.session_ids[sessionId], source: `session id ${sessionId}` };
+  }
+  const sessionName = env.CODEBUDDY_SESSION_NAME;
+  if (sessionName && bindings.session_names?.[sessionName]) {
+    return { botName: bindings.session_names[sessionName], source: `session name ${sessionName}` };
+  }
+  const workspace = (0, import_node_path.resolve)(env.CODEBUDDY_PROJECT_DIR || env.CLAUDE_PROJECT_DIR || cwd);
+  if (bindings.workspaces?.[workspace]) {
+    return { botName: bindings.workspaces[workspace], source: `workspace ${workspace}` };
+  }
+  const sessionKind = env.CODEBUDDY_SESSION_KIND;
+  if (sessionKind && bindings.session_kinds?.[sessionKind]) {
+    return { botName: bindings.session_kinds[sessionKind], source: `session kind ${sessionKind}` };
+  }
+  if (file2.default_bot) return { botName: file2.default_bot, source: "default bot" };
+  return { botName: null, source: "no matching binding" };
+}
+function profileEnv(profile, botName, configDir) {
+  if (!record(profile) || typeof profile.app_id !== "string" || typeof profile.app_secret !== "string") {
+    throw new Error(`Bot ${botName} needs app_id and app_secret strings`);
+  }
+  return {
+    LARK_APP_ID: profile.app_id,
+    LARK_APP_SECRET: profile.app_secret,
+    LARK_DOMAIN: profile.domain,
+    LARK_ALLOWED_SENDERS: profile.allowed_senders,
+    LARK_ALLOW_ALL: String(profile.allow_all ?? false),
+    LARK_GROUP_CHAT_ENABLED: String(profile.group_chat_enabled ?? false),
+    LARK_IMAGE_DOWNLOAD: String(profile.image_download ?? true),
+    LARK_MEDIA_DIR: profile.media_dir ? (0, import_node_path.isAbsolute)(profile.media_dir) ? profile.media_dir : (0, import_node_path.resolve)(configDir, profile.media_dir) : (0, import_node_path.join)(configDir, "lark-media", botName),
+    LARK_INSTANCE_PORT: profile.instance_port === void 0 ? void 0 : String(profile.instance_port),
+    LARK_INSTANCE_RETRY_MS: profile.instance_retry_ms === void 0 ? void 0 : String(profile.instance_retry_ms)
+  };
+}
+async function loadRuntimeConfig(options = {}) {
+  const env = options.env ?? process.env;
+  const argv = options.argv ?? process.argv.slice(2);
+  const cwd = options.cwd ?? process.cwd();
+  const home = options.home ?? (0, import_node_os.homedir)();
+  const configDir = env.CODEBUDDY_CONFIG_DIR || (0, import_node_path.join)(home, ".codebuddy");
+  const configPath = cliValue(argv, "--lark-config") || env.LARK_BOT_CONFIG || env.CODEBUDDY_PLUGIN_OPTION_BOT_CONFIG || (0, import_node_path.join)(configDir, "lark-channel.json");
+  let raw;
+  try {
+    raw = await (0, import_promises.readFile)(configPath, "utf8");
+  } catch (err) {
+    if (err.code !== "ENOENT") throw err;
+    if (cliValue(argv, "--lark-config") || env.LARK_BOT_CONFIG || env.CODEBUDDY_PLUGIN_OPTION_BOT_CONFIG) {
+      throw new Error(`Bot configuration file not found: ${configPath}`);
+    }
+    if (cliValue(argv, "--lark-bot") || env.LARK_BOT || env.CODEBUDDY_PLUGIN_OPTION_BOT) {
+      throw new Error("Selecting a bot requires a bot configuration file at ~/.codebuddy/lark-channel.json");
+    }
+    return {
+      botName: "legacy",
+      config: loadConfig(env),
+      source: "legacy environment",
+      configPath: null
+    };
+  }
+  const file2 = parseConfig(raw, configPath);
+  const selected = selectBot(file2, env, argv, cwd);
+  if (!selected.botName) {
+    return { botName: null, config: null, source: selected.source, configPath };
+  }
+  if (!Object.hasOwn(file2.bots, selected.botName)) {
+    throw new Error(`${configPath}: ${selected.source} selects unknown bot ${selected.botName}`);
+  }
+  const profile = file2.bots[selected.botName];
+  return {
+    botName: selected.botName,
+    config: loadConfig(profileEnv(profile, selected.botName, configDir)),
+    source: selected.source,
+    configPath
+  };
+}
+
+// src/local-bot-leader.ts
+var import_node_crypto = require("node:crypto");
+var import_node_net = require("node:net");
+function portForBot(appId) {
+  const hash2 = (0, import_node_crypto.createHash)("sha256").update(appId).digest();
+  return 3e4 + hash2.readUInt32BE(0) % 2e4;
+}
+var LocalBotLeader = class {
+  constructor(port, retryMs, onLeader, log2 = () => {
+  }) {
+    this.port = port;
+    this.retryMs = retryMs;
+    this.onLeader = onLeader;
+    this.log = log2;
+  }
+  port;
+  retryMs;
+  onLeader;
+  log;
+  server = null;
+  retryTimer = null;
+  stopped = false;
+  waitingLogged = false;
+  async start() {
+    this.stopped = false;
+    this.waitingLogged = false;
+    await this.tryAcquire();
+  }
+  async tryAcquire() {
+    if (this.stopped || this.server) return;
+    const server = (0, import_node_net.createServer)((socket) => socket.destroy());
+    const outcome = await new Promise((resolve3, reject) => {
+      const onError = (err) => {
+        server.removeAllListeners("listening");
+        if (err.code === "EADDRINUSE") resolve3("busy");
+        else reject(err);
+      };
+      server.once("error", onError);
+      server.once("listening", () => {
+        server.removeListener("error", onError);
+        resolve3("leader");
+      });
+      server.listen({ host: "127.0.0.1", port: this.port, exclusive: true });
+    });
+    if (this.stopped) {
+      server.close();
+      return;
+    }
+    if (outcome === "busy") {
+      if (!this.waitingLogged) {
+        this.log(`bot port ${this.port} is occupied; waiting ${this.retryMs}ms`);
+        this.waitingLogged = true;
+      }
+      this.retryTimer = setTimeout(() => {
+        this.retryTimer = null;
+        this.tryAcquire().catch((err) => {
+          this.log(`leader election failed: ${err.message}`);
+          process.exit(1);
+        });
+      }, this.retryMs);
+      this.retryTimer.unref();
+      return;
+    }
+    this.server = server;
+    this.waitingLogged = false;
+    server.on("error", (err) => {
+      this.log(`leader port error: ${err.message}`);
+      process.exit(1);
+    });
+    this.log(`acquired bot port ${this.port}`);
+    await this.onLeader();
+  }
+  async stop() {
+    this.stopped = true;
+    if (this.retryTimer) clearTimeout(this.retryTimer);
+    this.retryTimer = null;
+    const server = this.server;
+    this.server = null;
+    if (server?.listening) {
+      await new Promise((resolve3) => server.close(() => resolve3()));
+    }
+  }
+};
 
 // src/lark-bridge.ts
 var lark = __toESM(require_lib2(), 1);
 var import_node_fs = require("node:fs");
-var import_promises = require("node:fs/promises");
-var import_node_path = require("node:path");
+var import_promises2 = require("node:fs/promises");
+var import_node_path2 = require("node:path");
 var PERMISSION_REPLY_RE = /^\s*(y|yes|n|no)\s+([a-km-z]{5})\s*$/i;
 var MAX_LARK_TEXT_CHARS = 2e4;
 var MAX_SEEN_MESSAGE_IDS = 2e3;
@@ -132157,7 +132378,7 @@ var LarkBridge = class {
         this.log("connection re-established after a previous drop");
       }
     });
-    this.mediaDirAbs = (0, import_node_path.resolve)(config2.mediaDir);
+    this.mediaDirAbs = (0, import_node_path2.resolve)(config2.mediaDir);
   }
   config;
   handlers;
@@ -132184,7 +132405,7 @@ var LarkBridge = class {
     return this.config.allowedSenders.includes(openId);
   }
   async start() {
-    await (0, import_promises.mkdir)(this.mediaDirAbs, { recursive: true });
+    await (0, import_promises2.mkdir)(this.mediaDirAbs, { recursive: true });
     const eventDispatcher = new lark.EventDispatcher({
       loggerLevel: lark.LoggerLevel.warn,
       logger: this.stderrLogger
@@ -132336,12 +132557,12 @@ var LarkBridge = class {
       const ext = ".png";
       const safeId = messageId.replace(/[^a-zA-Z0-9_-]/g, "_") || imageKey.slice(0, 8);
       const filename = `${Date.now()}-${safeId}${ext}`;
-      const outPath = (0, import_node_path.resolve)(this.mediaDirAbs, filename);
-      await new Promise((resolve2, reject) => {
+      const outPath = (0, import_node_path2.resolve)(this.mediaDirAbs, filename);
+      await new Promise((resolve3, reject) => {
         const ws = (0, import_node_fs.createWriteStream)(outPath);
         stream.pipe(ws);
         stream.on("error", reject);
-        ws.on("finish", resolve2);
+        ws.on("finish", resolve3);
         ws.on("error", reject);
       });
       return outPath;
@@ -144791,7 +145012,7 @@ __export(external_exports, {
   promise: () => promise,
   property: () => _property,
   readonly: () => readonly,
-  record: () => record,
+  record: () => record2,
   refine: () => refine,
   regex: () => _regex,
   regexes: () => regexes_exports,
@@ -144982,7 +145203,7 @@ __export(schemas_exports2, {
   preprocess: () => preprocess,
   promise: () => promise,
   readonly: () => readonly,
-  record: () => record,
+  record: () => record2,
   refine: () => refine,
   set: () => set,
   strictObject: () => strictObject,
@@ -145951,7 +146172,7 @@ var ZodRecord = /* @__PURE__ */ $constructor("ZodRecord", (inst, def) => {
   inst.keyType = def.keyType;
   inst.valueType = def.valueType;
 });
-function record(keyType, valueType, params) {
+function record2(keyType, valueType, params) {
   if (!valueType || !valueType._zod) {
     return new ZodRecord({
       type: "record",
@@ -146418,7 +146639,7 @@ var stringbool = (...args) => _stringbool({
 }, ...args);
 function json(params) {
   const jsonSchema = lazy(() => {
-    return union([string2(params), number2(), boolean2(), _null3(), array(jsonSchema), record(string2(), jsonSchema)]);
+    return union([string2(params), number2(), boolean2(), _null3(), array(jsonSchema), record2(string2(), jsonSchema)]);
   });
   return jsonSchema;
 }
@@ -147181,7 +147402,7 @@ var ImplementationSchema = BaseMetadataSchema.extend({
 });
 var FormElicitationCapabilitySchema = intersection(object2({
   applyDefaults: boolean2().optional()
-}), record(string2(), unknown()));
+}), record2(string2(), unknown()));
 var ElicitationCapabilitySchema = preprocess((value) => {
   if (value && typeof value === "object" && !Array.isArray(value)) {
     if (Object.keys(value).length === 0) {
@@ -147192,7 +147413,7 @@ var ElicitationCapabilitySchema = preprocess((value) => {
 }, intersection(object2({
   form: FormElicitationCapabilitySchema.optional(),
   url: AssertObjectSchema.optional()
-}), record(string2(), unknown()).optional()));
+}), record2(string2(), unknown()).optional()));
 var ClientTasksCapabilitySchema = looseObject({
   /**
    * Present if the client supports listing tasks.
@@ -147245,7 +147466,7 @@ var ClientCapabilitiesSchema = object2({
   /**
    * Experimental, non-standard capabilities that the client supports.
    */
-  experimental: record(string2(), AssertObjectSchema).optional(),
+  experimental: record2(string2(), AssertObjectSchema).optional(),
   /**
    * Present if the client supports sampling from an LLM.
    */
@@ -147280,7 +147501,7 @@ var ClientCapabilitiesSchema = object2({
   /**
    * Extensions that the client supports. Keys are extension identifiers (vendor-prefix/extension-name).
    */
-  extensions: record(string2(), AssertObjectSchema).optional()
+  extensions: record2(string2(), AssertObjectSchema).optional()
 });
 var InitializeRequestParamsSchema = BaseRequestParamsSchema.extend({
   /**
@@ -147298,7 +147519,7 @@ var ServerCapabilitiesSchema = object2({
   /**
    * Experimental, non-standard capabilities that the server supports.
    */
-  experimental: record(string2(), AssertObjectSchema).optional(),
+  experimental: record2(string2(), AssertObjectSchema).optional(),
   /**
    * Present if the server supports sending log messages to the client.
    */
@@ -147345,7 +147566,7 @@ var ServerCapabilitiesSchema = object2({
   /**
    * Extensions that the server supports. Keys are extension identifiers (vendor-prefix/extension-name).
    */
-  extensions: record(string2(), AssertObjectSchema).optional()
+  extensions: record2(string2(), AssertObjectSchema).optional()
 });
 var InitializeResultSchema = ResultSchema.extend({
   /**
@@ -147483,7 +147704,7 @@ var ResourceContentsSchema = object2({
    * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
    * for notes on _meta usage.
    */
-  _meta: record(string2(), unknown()).optional()
+  _meta: record2(string2(), unknown()).optional()
 });
 var TextResourceContentsSchema = ResourceContentsSchema.extend({
   /**
@@ -147677,7 +147898,7 @@ var GetPromptRequestParamsSchema = BaseRequestParamsSchema.extend({
   /**
    * Arguments to use for templating the prompt.
    */
-  arguments: record(string2(), string2()).optional()
+  arguments: record2(string2(), string2()).optional()
 });
 var GetPromptRequestSchema = RequestSchema.extend({
   method: literal("prompts/get"),
@@ -147697,7 +147918,7 @@ var TextContentSchema = object2({
    * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
    * for notes on _meta usage.
    */
-  _meta: record(string2(), unknown()).optional()
+  _meta: record2(string2(), unknown()).optional()
 });
 var ImageContentSchema = object2({
   type: literal("image"),
@@ -147717,7 +147938,7 @@ var ImageContentSchema = object2({
    * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
    * for notes on _meta usage.
    */
-  _meta: record(string2(), unknown()).optional()
+  _meta: record2(string2(), unknown()).optional()
 });
 var AudioContentSchema = object2({
   type: literal("audio"),
@@ -147737,7 +147958,7 @@ var AudioContentSchema = object2({
    * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
    * for notes on _meta usage.
    */
-  _meta: record(string2(), unknown()).optional()
+  _meta: record2(string2(), unknown()).optional()
 });
 var ToolUseContentSchema = object2({
   type: literal("tool_use"),
@@ -147755,12 +147976,12 @@ var ToolUseContentSchema = object2({
    * Arguments to pass to the tool.
    * Must conform to the tool's inputSchema.
    */
-  input: record(string2(), unknown()),
+  input: record2(string2(), unknown()),
   /**
    * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
    * for notes on _meta usage.
    */
-  _meta: record(string2(), unknown()).optional()
+  _meta: record2(string2(), unknown()).optional()
 });
 var EmbeddedResourceSchema = object2({
   type: literal("resource"),
@@ -147773,7 +147994,7 @@ var EmbeddedResourceSchema = object2({
    * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
    * for notes on _meta usage.
    */
-  _meta: record(string2(), unknown()).optional()
+  _meta: record2(string2(), unknown()).optional()
 });
 var ResourceLinkSchema = ResourceSchema.extend({
   type: literal("resource_link")
@@ -147863,7 +148084,7 @@ var ToolSchema = object2({
    */
   inputSchema: object2({
     type: literal("object"),
-    properties: record(string2(), AssertObjectSchema).optional(),
+    properties: record2(string2(), AssertObjectSchema).optional(),
     required: array(string2()).optional()
   }).catchall(unknown()),
   /**
@@ -147873,7 +148094,7 @@ var ToolSchema = object2({
    */
   outputSchema: object2({
     type: literal("object"),
-    properties: record(string2(), AssertObjectSchema).optional(),
+    properties: record2(string2(), AssertObjectSchema).optional(),
     required: array(string2()).optional()
   }).catchall(unknown()).optional(),
   /**
@@ -147888,7 +148109,7 @@ var ToolSchema = object2({
    * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
    * for notes on _meta usage.
    */
-  _meta: record(string2(), unknown()).optional()
+  _meta: record2(string2(), unknown()).optional()
 });
 var ListToolsRequestSchema = PaginatedRequestSchema.extend({
   method: literal("tools/list")
@@ -147909,7 +148130,7 @@ var CallToolResultSchema = ResultSchema.extend({
    *
    * If the Tool defines an outputSchema, this field MUST be present in the result, and contain a JSON object that matches the schema.
    */
-  structuredContent: record(string2(), unknown()).optional(),
+  structuredContent: record2(string2(), unknown()).optional(),
   /**
    * Whether the tool call ended in an error.
    *
@@ -147937,7 +148158,7 @@ var CallToolRequestParamsSchema = TaskAugmentedRequestParamsSchema.extend({
   /**
    * Arguments to pass to the tool.
    */
-  arguments: record(string2(), unknown()).optional()
+  arguments: record2(string2(), unknown()).optional()
 });
 var CallToolRequestSchema = RequestSchema.extend({
   method: literal("tools/call"),
@@ -148039,7 +148260,7 @@ var ToolResultContentSchema = object2({
    * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
    * for notes on _meta usage.
    */
-  _meta: record(string2(), unknown()).optional()
+  _meta: record2(string2(), unknown()).optional()
 });
 var SamplingContentSchema = discriminatedUnion("type", [TextContentSchema, ImageContentSchema, AudioContentSchema]);
 var SamplingMessageContentBlockSchema = discriminatedUnion("type", [
@@ -148056,7 +148277,7 @@ var SamplingMessageSchema = object2({
    * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
    * for notes on _meta usage.
    */
-  _meta: record(string2(), unknown()).optional()
+  _meta: record2(string2(), unknown()).optional()
 });
 var CreateMessageRequestParamsSchema = TaskAugmentedRequestParamsSchema.extend({
   messages: array(SamplingMessageSchema),
@@ -148244,7 +148465,7 @@ var ElicitRequestFormParamsSchema = TaskAugmentedRequestParamsSchema.extend({
    */
   requestedSchema: object2({
     type: literal("object"),
-    properties: record(string2(), PrimitiveSchemaDefinitionSchema),
+    properties: record2(string2(), PrimitiveSchemaDefinitionSchema),
     required: array(string2()).optional()
   })
 });
@@ -148296,7 +148517,7 @@ var ElicitResultSchema = ResultSchema.extend({
    * Per MCP spec, content is "typically omitted" for decline/cancel actions.
    * We normalize null to undefined for leniency while maintaining type compatibility.
    */
-  content: preprocess((val) => val === null ? void 0 : val, record(string2(), union([string2(), number2(), boolean2(), array(string2())])).optional())
+  content: preprocess((val) => val === null ? void 0 : val, record2(string2(), union([string2(), number2(), boolean2(), array(string2())])).optional())
 });
 var ResourceTemplateReferenceSchema = object2({
   type: literal("ref/resource"),
@@ -148331,7 +148552,7 @@ var CompleteRequestParamsSchema = BaseRequestParamsSchema.extend({
     /**
      * Previously-resolved variables in a URI template or prompt.
      */
-    arguments: record(string2(), string2()).optional()
+    arguments: record2(string2(), string2()).optional()
   }).optional()
 });
 var CompleteRequestSchema = RequestSchema.extend({
@@ -148367,7 +148588,7 @@ var RootSchema = object2({
    * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
    * for notes on _meta usage.
    */
-  _meta: record(string2(), unknown()).optional()
+  _meta: record2(string2(), unknown()).optional()
 });
 var ListRootsRequestSchema = RequestSchema.extend({
   method: literal("roots/list"),
@@ -149012,7 +149233,7 @@ var Protocol = class {
           return;
         }
         const pollInterval = task2.pollInterval ?? this._options?.defaultTaskPollInterval ?? 1e3;
-        await new Promise((resolve2) => setTimeout(resolve2, pollInterval));
+        await new Promise((resolve3) => setTimeout(resolve3, pollInterval));
         options?.signal?.throwIfAborted();
       }
     } catch (error51) {
@@ -149029,7 +149250,7 @@ var Protocol = class {
    */
   request(request, resultSchema, options) {
     const { relatedRequestId, resumptionToken, onresumptiontoken, task, relatedTask } = options ?? {};
-    return new Promise((resolve2, reject) => {
+    return new Promise((resolve3, reject) => {
       const earlyReject = (error51) => {
         reject(error51);
       };
@@ -149107,7 +149328,7 @@ var Protocol = class {
           if (!parseResult.success) {
             reject(parseResult.error);
           } else {
-            resolve2(parseResult.data);
+            resolve3(parseResult.data);
           }
         } catch (error51) {
           reject(error51);
@@ -149368,12 +149589,12 @@ var Protocol = class {
       }
     } catch {
     }
-    return new Promise((resolve2, reject) => {
+    return new Promise((resolve3, reject) => {
       if (signal.aborted) {
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
         return;
       }
-      const timeoutId = setTimeout(resolve2, interval);
+      const timeoutId = setTimeout(resolve3, interval);
       signal.addEventListener("abort", () => {
         clearTimeout(timeoutId);
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
@@ -150249,12 +150470,12 @@ var StdioServerTransport = class {
     this.onclose?.();
   }
   send(message) {
-    return new Promise((resolve2) => {
+    return new Promise((resolve3) => {
       const json2 = serializeMessage(message);
       if (this._stdout.write(json2)) {
-        resolve2();
+        resolve3();
       } else {
-        this._stdout.once("drain", resolve2);
+        this._stdout.once("drain", resolve3);
       }
     });
   }
@@ -150277,7 +150498,7 @@ var ChannelServer = class {
     const experimental = { "claude/channel": {} };
     if (permissionRelayEnabled) experimental["claude/channel/permission"] = {};
     this.mcp = new Server(
-      { name: "codebuddy-lark-channel", version: "0.2.0" },
+      { name: "codebuddy-lark-channel", version: "0.2.4" },
       {
         capabilities: {
           experimental,
@@ -150424,7 +150645,15 @@ function log(line) {
 }
 async function main() {
   await loadDotenv();
-  const config2 = loadConfig(process.env);
+  const selection = await loadRuntimeConfig();
+  const config2 = selection.config;
+  if (!config2) {
+    const channel2 = new ChannelServer(log, false);
+    await channel2.listen();
+    log(`no Lark bot selected (${selection.source}); waiting as an inactive channel`);
+    return;
+  }
+  log(`selected Lark bot ${selection.botName} via ${selection.source}`);
   if (config2.allowAllSenders) {
     log("WARNING: LARK_ALLOW_ALL=true \u2014 anyone who can DM the bot can inject messages. For testing only.");
   }
@@ -150452,31 +150681,40 @@ async function main() {
   });
   channel.setBridge(bridge);
   await channel.listen();
-  await bridge.start();
-  log("codebuddy-lark-channel ready");
+  const port = config2.instancePort ?? portForBot(config2.appId);
+  const leader = new LocalBotLeader(port, config2.instanceRetryMs, async () => {
+    try {
+      await bridge.start();
+      log(`codebuddy-lark-channel ready (bot ${selection.botName}, port ${port})`);
+    } catch (err) {
+      log(`Lark bot ${selection.botName} failed to start: ${err.message}`);
+      process.exit(1);
+    }
+  }, log);
+  await leader.start();
 }
 async function loadDotenv() {
   try {
-    const { readFile, stat } = await import("node:fs/promises");
-    const { dirname, resolve: resolve2 } = await import("node:path");
-    const { homedir } = await import("node:os");
-    const moduleDir = dirname(resolve2(process.argv[1] || "."));
-    const home = homedir();
+    const { readFile: readFile2, stat } = await import("node:fs/promises");
+    const { dirname, resolve: resolve3 } = await import("node:path");
+    const { homedir: homedir2 } = await import("node:os");
+    const moduleDir = dirname(resolve3(process.argv[1] || "."));
+    const home = homedir2();
     const candidates = [
-      resolve2(process.cwd(), ".env"),
-      resolve2(process.cwd(), "../.env"),
-      resolve2(moduleDir, "../.env"),
+      resolve3(process.cwd(), ".env"),
+      resolve3(process.cwd(), "../.env"),
+      resolve3(moduleDir, "../.env"),
       // CodeBuddy main config dir (where credentials.json lives).
-      resolve2(home, ".codebuddy", ".env"),
+      resolve3(home, ".codebuddy", ".env"),
       // CodeBuddy-managed plugin data dir for this plugin (survives reinstalls).
-      resolve2(home, ".codebuddy", "plugins", "data", "codebuddy-lark-channel", ".env")
+      resolve3(home, ".codebuddy", "plugins", "data", "codebuddy-lark-channel", ".env")
     ];
     for (const path of candidates) {
       let raw;
       try {
         const s = await stat(path);
         if (!s.isFile()) continue;
-        raw = await readFile(path, "utf8");
+        raw = await readFile2(path, "utf8");
       } catch {
         continue;
       }

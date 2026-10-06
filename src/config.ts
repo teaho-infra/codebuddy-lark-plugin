@@ -19,6 +19,10 @@ export interface Config {
   imageDownloadEnabled: boolean;
   /** Directory used to cache downloaded images/files. */
   mediaDir: string;
+  /** Optional local loopback port used to elect one process for this bot. */
+  instancePort?: number;
+  /** How often a standby process retries taking ownership. */
+  instanceRetryMs: number;
 }
 
 function parseList(value: string | undefined): string[] {
@@ -32,6 +36,15 @@ function parseList(value: string | undefined): string[] {
 function bool(value: string | undefined, defaultValue = false): boolean {
   if (value === undefined) return defaultValue;
   return ['1', 'true', 'yes', 'on'].includes(value.toLowerCase());
+}
+
+function integerInRange(value: string | undefined, name: string, min: number, max: number): number | undefined {
+  if (value === undefined || value === '') return undefined;
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < min || parsed > max) {
+    throw new Error(`${name} must be an integer from ${min} to ${max}`);
+  }
+  return parsed;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -80,5 +93,13 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       true,
     ),
     mediaDir: env.LARK_MEDIA_DIR || './.lark-media',
+    instancePort: integerInRange(
+      env.LARK_INSTANCE_PORT || env.CODEBUDDY_PLUGIN_OPTION_INSTANCE_PORT,
+      'LARK_INSTANCE_PORT', 1, 65535,
+    ),
+    instanceRetryMs: integerInRange(
+      env.LARK_INSTANCE_RETRY_MS || env.CODEBUDDY_PLUGIN_OPTION_INSTANCE_RETRY_MS,
+      'LARK_INSTANCE_RETRY_MS', 100, 60000,
+    ) ?? 2000,
   };
 }

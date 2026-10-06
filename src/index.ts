@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-import { loadConfig } from './config.js';
+import { loadRuntimeConfig } from './instance-config.js';
+import { LocalBotLeader, portForBot } from './local-bot-leader.js';
 import { LarkBridge } from './lark-bridge.js';
 import { ChannelServer } from './channel-server.js';
 
@@ -12,7 +13,16 @@ async function main(): Promise<void> {
   // Minimal .env loader (no extra dependency). Parses KEY=VALUE lines.
   await loadDotenv();
 
-  const config = loadConfig(process.env);
+  const selection = await loadRuntimeConfig();
+  const config = selection.config;
+
+  if (!config) {
+    const channel = new ChannelServer(log, false);
+    await channel.listen();
+    log(`no Lark bot selected (${selection.source}); waiting as an inactive channel`);
+    return;
+  }
+  log(`selected Lark bot ${selection.botName} via ${selection.source}`);
 
   if (config.allowAllSenders) {
     log('WARNING: LARK_ALLOW_ALL=true — anyone who can DM the bot can inject messages. For testing only.');
@@ -49,10 +59,19 @@ async function main(): Promise<void> {
   // Start MCP stdio first (CodeBuddy spawns us and waits for the initialize handshake).
   await channel.listen();
 
-  // Then connect to Lark.
-  await bridge.start();
-
-  log('codebuddy-lark-channel ready');
+  // Only the process holding this bot's loopback port starts a Lark connection.
+  // Other CodeBuddy sessions keep their MCP transport alive and retry.
+  const port = config.instancePort ?? portForBot(config.appId);
+  const leader = new LocalBotLeader(port, config.instanceRetryMs, async () => {
+    try {
+      await bridge.start();
+      log(`codebuddy-lark-channel ready (bot ${selection.botName}, port ${port})`);
+    } catch (err) {
+      log(`Lark bot ${selection.botName} failed to start: ${(err as Error).message}`);
+      process.exit(1);
+    }
+  }, log);
+  await leader.start();
 }
 
 async function loadDotenv(): Promise<string | null> {

@@ -48,7 +48,7 @@ export class ChannelServer {
     if (permissionRelayEnabled) experimental['claude/channel/permission'] = {};
 
     this.mcp = new Server(
-      { name: 'codebuddy-lark-channel', version: '0.2.0' },
+      { name: 'codebuddy-lark-channel', version: '0.2.4' },
       {
         capabilities: {
           experimental,
