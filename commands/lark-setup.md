@@ -109,6 +109,7 @@ asking. Otherwise ask the user, one question at a time:
 | `image_download` | no | `true` | `true`/`false` |
 | `allow_all` | no | `false` | `true` accepts messages from anyone — prompt-injection risk, testing only |
 | `daemon_only` | no | `false` | `true` allows only a CodeBuddy daemon session to connect; ignores `lark-channel.json` |
+| `proxy` | no | — | corporate proxy URL or `host:port` (e.g. `http://proxy-intlho.wal-mart.com:8080`). Sets NODE_TLS_REJECT_UNAUTHORIZED=0. Empty string = never proxy |
 
 Store booleans as the strings `"true"` / `"false"`.
 

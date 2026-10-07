@@ -3,6 +3,7 @@ import { loadRuntimeConfig } from './instance-config.js';
 import { LocalBotLeader, portForBot } from './local-bot-leader.js';
 import { LarkBridge } from './lark-bridge.js';
 import { ChannelServer } from './channel-server.js';
+import { configureProxy } from './proxy.js';
 
 // All logs MUST go to stderr. stdout is reserved for the MCP JSON-RPC framing.
 function log(line: string): void {
@@ -23,6 +24,12 @@ async function main(): Promise<void> {
     return;
   }
   log(`selected Lark bot ${selection.botName} via ${selection.source}`);
+
+  // Apply corporate proxy settings before any outbound network call: the
+  // Lark SDK axios client reads HTTPS_PROXY at request time, and the WS agent
+  // below is built from these env vars. config.proxy (bot profile / plugin
+  // option) wins over environment variables.
+  await configureProxy({ log, proxyUrl: config.proxy });
 
   if (config.allowAllSenders) {
     log('WARNING: LARK_ALLOW_ALL=true — anyone who can DM the bot can inject messages. For testing only.');

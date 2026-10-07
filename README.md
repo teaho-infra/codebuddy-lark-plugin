@@ -74,7 +74,8 @@ For one bot that should respond only through the CodeBuddy daemon, add
       "options": {
         "app_id": "cli_your_app_id",
         "allowed_senders": "ou_your_open_id",
-        "daemon_only": "true"
+        "daemon_only": "true",
+        "proxy": "http://proxy-intlho.wal-mart.com:8080"
       }
     }
   }
@@ -116,7 +117,8 @@ App Secrets (`chmod 600 ~/.codebuddy/lark-channel.json` on macOS/Linux).
     "daemon-bot": {
       "app_id": "cli_daemon_bot_id",
       "app_secret": "daemon-bot-secret",
-      "allowed_senders": "ou_your_open_id"
+      "allowed_senders": "ou_your_open_id",
+      "proxy": "http://proxy-intlho.wal-mart.com:8080"
     },
     "project-bot": {
       "app_id": "cli_project_bot_id",
@@ -368,9 +370,10 @@ All config is via environment variables (or `.env` in the project root):
 | `LARK_GROUP_CHAT_ENABLED` | no | `false` | Also forward group messages (sender allowlist still applies) |
 | `LARK_IMAGE_DOWNLOAD` | no | `true` | Download images and pass local paths to CodeBuddy |
 | `LARK_MEDIA_DIR` | no | `./.lark-media` | Where to cache downloaded media |
-| `HTTP_PROXY` / `HTTPS_PROXY` | no | _unset_ | Proxy for outbound HTTP(S) (e.g. corporate network). Read by axios / node's HTTPS agent. |
+| `LARK_PROXY` | no | `http://proxy-intlho.wal-mart.com:8080` | Corporate proxy (URL or `host:port`). Routes axios + WS + fetch, sets `NODE_TLS_REJECT_UNAUTHORIZED=0`. Empty string disables the proxy |
+| `HTTP_PROXY` / `HTTPS_PROXY` | no | _unset_ | Alternative to `LARK_PROXY`; read when it is unset (e.g. corporate network). Read by axios / node's HTTPS agent. |
 | `NO_PROXY` | no | _unset_ | Comma-separated host suffixes that bypass the proxy. |
-| `NODE_TLS_REJECT_UNAUTHORIZED` | no | `1` | Set to `0` only if your proxy performs TLS interception with a private CA. |
+| `NODE_TLS_REJECT_UNAUTHORIZED` | no | `1` | Set to `0` only if your proxy performs TLS interception with a private CA. `LARK_PROXY` sets it automatically. |
 
 ### `.env` search order
 
@@ -386,7 +389,28 @@ A line like `loaded 7 var(s) from /home/user/.codebuddy/.env` on stderr tells yo
 
 ### Corporate proxy / MITM
 
-If you are behind an HTTP proxy that must be used to reach Lark/Feishu, set the standard env vars in your `.env`:
+If you are behind an HTTP proxy that must be used to reach Lark/Feishu, the
+simplest switch is `LARK_PROXY` (or the `proxy` plugin option in
+`settings.json`, or a per-bot `proxy` field in `lark-channel.json`):
+
+```bash
+LARK_PROXY=http://proxy.corp.example.com:8080   # or bare host:port
+```
+
+When set, the plugin:
+
+1. routes SDK HTTP requests (axios) through `HTTPS_PROXY`/`HTTP_PROXY`,
+2. routes the WebSocket long-connection through an `https-proxy-agent` (the
+   `ws` package ignores proxy env vars on its own),
+3. sets `NODE_TLS_REJECT_UNAUTHORIZED=0` for self-signed corporate MITM
+   certificates (skipped when you set the variable explicitly),
+4. installs an undici `ProxyAgent` as the global dispatcher for `fetch`, when
+   `undici` is resolvable at runtime.
+
+An empty value (`LARK_PROXY=`) disables the proxy entirely (direct connect).
+Without `LARK_PROXY`, the standard env vars below still work, and when nothing
+is configured the plugin falls back to a corporate default proxy
+(`http://proxy-intlho.wal-mart.com:8080`) matching the reference deployment:
 
 ```bash
 HTTP_PROXY=http://proxy.corp.example.com:8080
@@ -394,7 +418,9 @@ HTTPS_PROXY=http://proxy.corp.example.com:8080
 NO_PROXY=localhost,127.0.0.1,.corp.example.com
 ```
 
-If your proxy performs TLS interception with a private CA, Node will reject the cert chain. To accept your corporate MITM appliance (only if you trust the operator):
+If your proxy performs TLS interception with a private CA, Node will reject the
+cert chain. To accept your corporate MITM appliance (only if you trust the
+operator):
 
 ```bash
 NODE_TLS_REJECT_UNAUTHORIZED=0
@@ -429,6 +455,7 @@ Note: a known esbuild packaging quirk can bundle `https-proxy-agent`'s ES6 class
 ```
 
 - `src/config.ts` — env config
+- `src/proxy.ts` — corporate proxy support (axios env vars + WS agent + undici fetch dispatcher)
 - `src/instance-config.ts` — selects a bot from the shared instance bindings
 - `src/local-bot-leader.ts` — keeps one local WebSocket owner per bot
 - `src/lark-bridge.ts` — Lark WS client, message parsing, image download, send

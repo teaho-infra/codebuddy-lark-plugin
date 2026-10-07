@@ -17,16 +17,14 @@ await build({
   // dynamic-require warnings. Everything else is bundled.
   external: [
     // keep native/optional deps external if any appear
+    // undici is optional at runtime (global fetch dispatcher); resolved from
+    // the host Node install when present, skipped silently when not.
+    'undici',
   ],
-  // Redirect every import of the bare `https-proxy-agent` specifier to the
-  // factory entry point (`dist/index.js`). This guarantees only the factory
-  // function is bundled into the axios WSClient call site, sidestepping an
-  // upstream esbuild quirk where a same-package bare import can resolve to
-  // the ES6 class file (`dist/agent.js`), which axios then calls without
-  // `new` and throws at runtime. Mirrors what scripts/patch-dist.mjs does as
-  // a post-build safety net.
-  alias: {
-    'https-proxy-agent': 'https-proxy-agent/dist/index.js',
-  },
+  // Note: the https-proxy-agent bundling alias was needed for v5, whose
+  // bare-import could resolve to the ES6 class file that axios then called
+  // without `new`. v9 (current) exports a plain factory from "./dist/index.js"
+  // and bundles cleanly without the alias; scripts/patch-dist.mjs remains as
+  // a safety net if a stale v5 ever reappears.
   logLevel: 'info',
 });

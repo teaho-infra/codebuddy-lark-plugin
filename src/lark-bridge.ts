@@ -2,6 +2,7 @@ import * as lark from '@larksuiteoapi/node-sdk';
 import { createWriteStream } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 import type { Config } from './config.js';
 
 export interface InboundMessage {
@@ -180,12 +181,37 @@ export class LarkBridge {
       logger: this.stderrLogger,
     });
 
+    // Resolve the proxy for the WS transport once. config.proxy comes from
+    // the bot profile / plugin option; otherwise fall back to env vars set by
+    // configureProxy() (which itself defaults HTTPS_PROXY/HTTP_PROXY).
+    const wsProxyRaw = config.proxy ||
+      process.env.HTTPS_PROXY || process.env.https_proxy ||
+      process.env.HTTP_PROXY || process.env.http_proxy;
+    let wsProxyAgent: HttpsProxyAgent<string> | undefined;
+    if (wsProxyRaw && wsProxyRaw.trim() !== '') {
+      const normalized = /^https?:\/\//i.test(wsProxyRaw.trim())
+        ? wsProxyRaw.trim()
+        : `http://${wsProxyRaw.trim()}`;
+      try {
+        wsProxyAgent = new HttpsProxyAgent(normalized);
+      } catch (err) {
+        this.log(`proxy agent construction failed: ${(err as Error).message}; WS will connect directly`);
+      }
+    }
+
     this.wsClient = new lark.WSClient({
       appId: config.appId,
       appSecret: config.appSecret,
       domain: config.domain,
       loggerLevel: lark.LoggerLevel.warn,
       logger: this.stderrLogger,
+      // The `ws` package does NOT honor HTTPS_PROXY/HTTP_PROXY env vars, so
+      // the WebSocket long-connection must be routed through an explicit
+      // http(s) agent. https-proxy-agent reads the proxy URL from env (set by
+      // src/proxy.ts configureProxy(), a LARK_PROXY plugin option, or the
+      // user's own HTTPS_PROXY). Without a proxy configured, we pass no agent
+      // and ws connects directly.
+      ...(wsProxyAgent ? { agent: wsProxyAgent } : {}),
       // Surface the SDK's internal connection state machine so the user can
       // see *why* the WebSocket is not coming up. The SDK already logs these
       // events through the redirected logger above; the callbacks add

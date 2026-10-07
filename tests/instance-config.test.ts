@@ -161,6 +161,39 @@ test('daemon_only uses settings credentials on daemon and ignores shared bot fil
   assert.equal(selected.configPath, null);
 });
 
+test('daemon_only forwards the proxy plugin option to the bot config', async () => {
+  const home = await mkdtemp(join(tmpdir(), 'lark-config-'));
+  const selected = await loadRuntimeConfig({
+    home,
+    cwd: '/work/project',
+    env: {
+      CODEBUDDY_SESSION_KIND: 'daemon',
+      CODEBUDDY_PLUGIN_OPTION_DAEMON_ONLY: 'true',
+      CODEBUDDY_PLUGIN_OPTION_APP_ID: 'cli_settings',
+      CODEBUDDY_PLUGIN_OPTION_APP_SECRET: 'settings-secret',
+      CODEBUDDY_PLUGIN_OPTION_PROXY: 'proxy-intlho.wal-mart.com:8080',
+    },
+  });
+  assert.equal(selected.config?.proxy, 'proxy-intlho.wal-mart.com:8080');
+});
+
+test('bot profile proxy field flows into the resolved config', async () => {
+  const home = await fixture();
+  const dir = join(home, '.codebuddy');
+  const file = JSON.parse(await (await import('node:fs/promises')).readFile(join(dir, 'lark-channel.json'), 'utf8'));
+  file.bots.project.proxy = 'http://profile-proxy:8080';
+  await (await import('node:fs/promises')).writeFile(join(dir, 'lark-channel.json'), JSON.stringify(file));
+  const selected = await loadRuntimeConfig({
+    home,
+    cwd: '/other',
+    env: {
+      CODEBUDDY_SESSION_ID: 'chosen',
+      HTTPS_PROXY: 'http://from-env:1234',
+    },
+  });
+  assert.equal(selected.config?.proxy, 'http://profile-proxy:8080');
+});
+
 test('daemon_only fails closed when the session kind is unknown', async () => {
   const home = await mkdtemp(join(tmpdir(), 'lark-config-'));
   const selected = await loadRuntimeConfig({

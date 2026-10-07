@@ -1,6 +1,6 @@
 {
   "name": "codebuddy-lark-plugin",
-  "version": "0.2.6",
+  "version": "0.3.0",
   "description": "CodeBuddy Code channel plugin: bridge Lark/Feishu bot messages to a CodeBuddy session.",
   "type": "module",
   "bin": {
@@ -14,12 +14,17 @@
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.cjs",
     "test": "node --import tsx --test tests/*.test.ts",
+    "test:node": "node --experimental-transform-types --no-warnings --loader ./tsx-shim.mjs --test tests/*.test.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json || echo '(tsc segfault on lark sdk types in some envs; runtime uses esbuild/tsx)'"
   },
   "dependencies": {
     "@larksuiteoapi/node-sdk": "^1.73.0",
     "@modelcontextprotocol/sdk": "^1.30.0",
+    "https-proxy-agent": "^9.1.0",
     "zod": "^3.25.0 || ^4.0.0"
+  },
+  "optionalDependencies": {
+    "undici": "^8.10.0"
   },
   "devDependencies": {
     "@types/node": "^22.20.1",

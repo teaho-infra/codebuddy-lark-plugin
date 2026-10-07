@@ -14,6 +14,7 @@ interface BotProfile {
   media_dir?: string;
   instance_port?: number;
   instance_retry_ms?: number;
+  proxy?: string;
 }
 
 interface BotBindings {
@@ -58,6 +59,7 @@ function settingsFirstEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   for (const option of [
     'APP_ID', 'APP_SECRET', 'DOMAIN', 'ALLOWED_SENDERS', 'ALLOW_ALL',
     'GROUP_CHAT_ENABLED', 'IMAGE_DOWNLOAD', 'INSTANCE_PORT', 'INSTANCE_RETRY_MS',
+    'PROXY',
   ]) {
     const value = env[`CODEBUDDY_PLUGIN_OPTION_${option}`];
     if (value !== undefined && value !== '') preferred[`LARK_${option}`] = value;
@@ -143,6 +145,7 @@ function profileEnv(profile: BotProfile, botName: string, configDir: string): No
     LARK_INSTANCE_RETRY_MS: profile.instance_retry_ms === undefined
       ? undefined
       : String(profile.instance_retry_ms),
+    LARK_PROXY: profile.proxy,
   };
 }
 

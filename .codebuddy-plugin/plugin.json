@@ -1,6 +1,6 @@
 {
   "name": "codebuddy-lark-channel",
-  "version": "0.2.6",
+  "version": "0.3.0",
   "description": "Connect a Feishu/Lark bot to a running CodeBuddy Code session.",
   "license": "MIT",
   "keywords": ["lark", "feishu", "bot", "channel"],
@@ -47,6 +47,10 @@
     },
     "allow_all": {
       "description": "Accept messages from anyone (true/false). DANGEROUS: prompt-injection risk, testing only",
+      "sensitive": false
+    },
+    "proxy": {
+      "description": "Corporate proxy URL or host:port (e.g. http://proxy-intlho.wal-mart.com:8080). Routes Lark HTTP + WebSocket traffic through it and disables TLS cert validation (NODE_TLS_REJECT_UNAUTHORIZED=0) for self-signed proxy certs. Empty string = never use a proxy",
       "sensitive": false
     }
   },

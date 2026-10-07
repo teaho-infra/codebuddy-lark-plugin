@@ -23,6 +23,11 @@ export interface Config {
   instancePort?: number;
   /** How often a standby process retries taking ownership. */
   instanceRetryMs: number;
+  /**
+   * Corporate proxy URL (or bare host:port) used for WS + axios + fetch.
+   * Empty string means "explicitly disabled". Undefined = not configured.
+   */
+  proxy?: string;
 }
 
 function parseList(value: string | undefined): string[] {
@@ -101,5 +106,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       env.LARK_INSTANCE_RETRY_MS || env.CODEBUDDY_PLUGIN_OPTION_INSTANCE_RETRY_MS,
       'LARK_INSTANCE_RETRY_MS', 100, 60000,
     ) ?? 2000,
+    proxy: env.LARK_PROXY ?? env.CODEBUDDY_PLUGIN_OPTION_PROXY,
   };
 }
